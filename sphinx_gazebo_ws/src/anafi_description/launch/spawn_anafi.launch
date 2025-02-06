@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="anafi_drone" default="anafi"/>
+  <arg name="namespace" default="$(arg anafi_drone)"/>
+  <arg name="x" default="0.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="z" default="0.2"/>
+  <arg name="verbose" default="true"/>
+
+
+
+
+ 
+
+
+<group ns="$(arg anafi_drone)">
+    <include file="$(find anafi_description)/launch/anafi_drone.launch">
+			<arg name="anafi_drone" value="$( arg anafi_drone )"/>
+			<arg name="namespace" value="$( arg anafi_drone )"/>
+			<arg name="X" value="$(arg x)"/>
+			<arg name="Y" value="$(arg y)"/>
+			<arg name="Z" value="$(arg z)"/>
+		</include>  
+</group>
+
+
+<group ns="$(arg anafi_drone)_camera">
+  	<include file="$(find anafi_description)/launch/anafi_camera.launch">
+			<arg name="anafi_drone" value="$( arg anafi_drone )"/>
+			<arg name="namespace" value="$( arg anafi_drone )_camera"/>
+			<arg name="X" value="0.0"/>
+			<arg name="Y" value="0.0"/>
+			<arg name="Z" value="0.1"/>
+		</include>  
+</group>
+
+
+
+
+</launch>

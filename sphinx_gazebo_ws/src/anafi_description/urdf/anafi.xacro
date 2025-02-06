@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+
+<robot name="anafi" xmlns:xacro="http://ros.org/wiki/xacro">
+<!-- Define robot urdf here with meshes etc. -->
+
+  <!-- Base link -->
+  <link name="base_link">
+    <!-- Visual element with a mesh -->
+    <visual>
+      <geometry>
+        <mesh filename="package://anafi_description/meshes/anafi_simple.dae"/>
+      </geometry>
+    </visual>
+    <!-- Collision element with a simplified geometry -->
+    <collision>
+      <geometry>
+        <box size="0.18 0.24 0.066"/>
+      </geometry>
+    </collision>
+    <!-- Inertial properties -->
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.000051" ixy="0.0" ixz="0.0" iyy="0.0000750" iyz="0.0" izz="0.00003"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="base_link">
+    <gravity>0</gravity>
+  </gazebo>
+</robot>
+
+
+  
+
+
+

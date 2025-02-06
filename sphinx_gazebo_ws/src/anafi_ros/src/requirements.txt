@@ -1,0 +1,5 @@
+numpy==1.17.4
+olympe==0.0.1a1
+rospy==1.16.0
+sensor_msgs==1.13.1
+tf==1.13.2

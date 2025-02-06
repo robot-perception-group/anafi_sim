@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<launch>  
+<param name="use_sim_time" value="false"/>
+<arg name="drone_name" default="anafi"/>
+<!-- <arg name="cut_off_ang_freq" default="0.3"/> -->
+<arg name="publish_hz" default="100"/>
+
+
+<group ns="$(arg drone_name)">
+    <node name="anafi_control_waypoint_mpc_node" pkg="anafi_control" type="anafi_control_waypoint_mpc.py" output="screen" >
+        <param name="drone_name" value="$(arg drone_name)" />
+        <param name="publish_hz" value="10" />
+    </node>
+
+		
+
+    <node name="yaw_pid" pkg="pid" type="controller" output="screen" >
+        <param name="Kp" value="0.6" />
+        <param name="Ki" value="0.2" />
+        <param name="Kd" value="0.003" />
+        <param name="upper_limit" value="180" /><!-- [deg/s] -->
+        <param name="lower_limit" value="-180"/><!-- [deg/s] -->
+        <param name="windup_limit" value="0.5" />
+        <param name="max_loop_frequency" value="1000.0" />
+        <param name="min_loop_frequency" value="1.0" />
+        <param name="topic_from_controller" value="yaw_pid/control_effort"/>     
+        <param name="topic_from_plant" value="yaw_pid/state"/>
+        <param name="setpoint_topic" value="yaw_pid/setpoint"/>   
+    </node>  
+
+</group>
+
+
+
+</launch>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>  
+<param name="use_sim_time" value="false"/>
+<arg name="drone_name" default="anafi"/>
+
+<node name="sphinx_logger_node" pkg="sphinx_with_gazebo" type="anafi_control_logger.py" output="screen" >
+    <param name="drone_name" value="$(arg drone_name)"/>
+    <param name="publish_hz" value="20"/>
+</node> 
+</launch>

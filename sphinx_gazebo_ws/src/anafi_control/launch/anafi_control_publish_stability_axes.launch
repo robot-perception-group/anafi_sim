@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+      <arg name="drone_name" default="anafi"/>
+      <param name="use_sim_time" value="false"/>
+      <group ns="$(arg drone_name)">
+        <node name="anafi_control_publish_stability_axes_node" pkg="anafi_control" type="anafi_control_publish_stability_axes.py" respawn="true" output="screen">
+        <param name="drone_name" value="$(arg drone_name)"/>
+        </node>
+      </group>  
+</launch>

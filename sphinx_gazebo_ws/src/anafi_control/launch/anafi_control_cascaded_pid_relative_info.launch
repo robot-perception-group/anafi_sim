@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+<param name="use_sim_time" value="false"/>
+<arg name="drone_name" default="anafi"/>
+<arg name="publish_hz" default="50"/>
+  <group ns="$(arg drone_name)">
+    <node name="anafi_control_cascaded_pid_relative_info_node" pkg="anafi_control" type="anafi_control_cascaded_pid_relative_info.py" output="screen" >
+        <param name = "relative_info_hz" value = "$(arg publish_hz)" />
+        <param name = "drone_name" value = "$(arg drone_name)" />
+
+    </node> 
+  </group>  
+</launch>

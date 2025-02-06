@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+  <launch>
+      <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="use_sim_time" default="false"/>
+  <arg name="drone_name" default="anafi"/>
+  <arg name="publish_hz" default="10"/>
+
+<!-- Launch transform publisher that publishes the commanded pose data to the moving platform -->
+  <node name="trajectory_generator_node" pkg="anafi_control" type="trajectory_generator.py" output="screen" >
+    <param name = "drone_name" value = "$(arg drone_name)" />
+    <param name = "publish_hz" value = "$(arg publish_hz)" />
+    <param name = "trajectory_start_position/x" value = "0" />
+    <param name = "trajectory_start_position/y" value = "0" />
+    <param name = "trajectory_start_position/z" value = "7" />
+    <param name = "trajectory_start_orientation/phi" value = "0" />
+    <param name = "trajectory_start_orientation/theta" value = "0" />
+    <param name = "trajectory_start_orientation/psi" value = "0" />
+  </node> 
+  </launch>

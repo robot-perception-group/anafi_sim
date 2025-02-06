@@ -1,0 +1,28 @@
+<!DOCTYPE PathPlan>
+<waypoints>
+ <waypoint number="0">
+  <field name="description" value=""/>
+  <field name="latitude" value="57.7317399947434993"/>
+  <field name="longitude" value="9.1056943999980469"/>
+  <field name="distance_to_home" value="998758.0789374682353809"/>
+  <field name="bearing_from_home" value="359.9999999999933493"/>
+  <field name="altitude_above_home" value="32.0000000000000000"/>
+  <field name="is_relative_to_home" value="1"/>
+  <field name="altitude" value="484,264404296875"/>
+  <field name="velocity" value="2"/>
+  <field name="mode" value="1"/>
+  <field name="mode_param0" value="0"/>
+  <field name="mode_param1" value="0"/>
+  <field name="mode_param2" value="0"/>
+  <field name="mode_param3" value="0"/>
+  <field name="condition" value="3"/>
+  <field name="condition_param0" value="0.1"/>
+  <field name="condition_param1" value="0"/>
+  <field name="condition_param2" value="0"/>
+  <field name="condition_param3" value="0"/>
+  <field name="command" value="0"/>
+  <field name="jumpdestination" value="1"/>
+  <field name="errordestination" value="1"/>
+  <field name="is_locked" value="0"/>
+ </waypoint>
+</waypoints>

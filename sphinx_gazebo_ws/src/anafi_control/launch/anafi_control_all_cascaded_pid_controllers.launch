@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+
+<launch>
+      <arg name="drone_name" default="anafi"/>
+
+      <param name="use_sim_time" value="false"/>
+
+
+
+		<include file="$(find anafi_control)/launch/anafi_control_cascaded_pid_relative_info.launch">
+           <arg name = "publish_hz" value = "30" />
+           <arg name = "drone_name" value = "$(arg drone_name)" /> 
+        </include> 
+
+		<include file="$(find anafi_control)/launch/anafi_control_cascaded_pid_interface.launch">
+           <arg name = "publish_hz" value = "10" />
+           <arg name = "drone_name" value = "$(arg drone_name)" /> 
+        </include> 
+
+		<!-- <include file="$(find anafi_control)/launch/anafi_control_publish_stability_axes.launch">
+        </include>  -->
+
+
+
+    <group ns="$(arg drone_name)">    
+
+		<node name="pid_x_ol_ac" pkg="pid" type="controller"  output="screen" >
+			<param name="Kp" value="0.875" />
+			<param name="Ki" value="0.0001" />
+			<param name="Kd" value="0." />
+			<param name="upper_limit" value="10" />
+			<param name="lower_limit" value="-10" />
+			<param name="windup_limit" value="0.11" />
+			<param name="max_loop_frequency" value="1000.0" />
+			<param name="min_loop_frequency" value="1.0" />
+			<param name="topic_from_controller" value="pid/x/ol_position/effort_ac"/>
+			<param name="topic_from_plant" value="pid/x/ol_position/state_ac"/>
+			<param name="setpoint_topic" value="pid/x/ol_position/setpoint_ac"/>
+		</node>
+
+		<node name="pid_x_il_ac" pkg="pid" type="controller"  output="screen" >
+			<param name="Kp" value="10.0"/>
+		    <param name="Ki" value="1.0"/>
+		    <param name="Kd" value="0"/>
+			<param name="upper_limit" value="30.64" /> 
+			<param name="lower_limit" value="-30.64" />
+			<param name="windup_limit" value="0" />
+			<param name="max_loop_frequency" value="1000.0" />
+			<param name="min_loop_frequency" value="1.0" />
+            <param name="topic_from_controller" value="pid/x/il_velocity/effort_ac"/>
+            <param name="topic_from_plant" value="pid/x/il_velocity/state_ac"/>
+            <param name="setpoint_topic" value="pid/x/il_velocity/setpoint_ac"/> 
+		</node>    
+
+		<node name="pid_y_ol_ac" pkg="pid" type="controller" output="screen" >
+			<param name="Kp" value="0.875" />
+			<param name="Ki" value="0.001" />
+			<param name="Kd" value="0." />
+			<param name="upper_limit" value="10" />
+			<param name="lower_limit" value="-10" />
+			<param name="windup_limit" value="5" />
+			<param name="max_loop_frequency" value="1000.0" />
+			<param name="min_loop_frequency" value="1.0" />
+			<param name="topic_from_controller" value="pid/y/ol_position/effort_ac"/>
+			<param name="topic_from_plant" value="pid/y/ol_position/state_ac"/>
+			<param name="setpoint_topic" value="pid/y/ol_position/setpoint_ac"/>
+		</node>
+
+		<node name="pid_y_il_ac" pkg="pid" type="controller" output="screen" >
+			<param name="Kp" value="-10.0"/>
+		    <param name="Ki" value="-1.0"/>
+		    <param name="Kd" value="-0"/>
+			<param name="upper_limit" value="30.64" /> 
+			<param name="lower_limit" value="-30.64" />
+			<param name="windup_limit" value="10" />
+			<param name="max_loop_frequency" value="1000.0" />
+			<param name="min_loop_frequency" value="1.0" />
+            <param name="topic_from_controller" value="pid/y/il_velocity/effort_ac"/>
+            <param name="topic_from_plant" value="pid/y/il_velocity/state_ac"/>
+            <param name="setpoint_topic" value="pid/y/il_velocity/setpoint_ac"/> 
+		</node>    
+
+
+
+		<node name="pid_z_ac" pkg="pid" type="controller"  output="screen" >
+            <param name="node_name" value="pid_yaw" />
+            <param name="Kp" value="1" />
+            <param name="Ki" value="0.0" />
+            <param name="Kd" value="0.001" />
+            <param name="upper_limit" value="2" />
+            <param name="lower_limit" value="-2"/>
+            <param name="windup_limit" value="0.5" />
+            <param name="max_loop_frequency" value="1000.0" />
+            <param name="min_loop_frequency" value="1000.0" />
+            <param name="topic_from_controller" value="pid/z/effort_ac"/>
+            <param name="topic_from_plant" value="pid/z/state_ac"/>
+            <param name="setpoint_topic" value="pid/z/setpoint_ac"/>
+		</node>    
+
+
+		<node name="pid_yaw_ac" pkg="pid" type="controller" output="screen" >
+            <param name="node_name" value="pid_yaw" />
+            <param name="Kp" value="0.6" />
+            <param name="Ki" value="0.2" />
+            <param name="Kd" value="0.003" />
+            <param name="upper_limit" value="180" />
+            <param name="lower_limit" value="-180"/>
+            <param name="windup_limit" value="0.5" />
+            <param name="max_loop_frequency" value="1000.0" />
+            <param name="min_loop_frequency" value="1000.0" />
+            <param name="topic_from_controller" value="pid/yaw/effort_ac"/>
+            <param name="topic_from_plant" value="pid/yaw/state_ac"/>
+            <param name="setpoint_topic" value="pid/yaw/setpoint_ac"/>
+		</node>    
+
+
+
+    </group>
+    
+
+
+
+
+
+
+</launch>
