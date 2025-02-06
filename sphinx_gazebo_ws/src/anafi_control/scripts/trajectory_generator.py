@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/raven/venvs/sphinx_with_gazebo/bin/python
 
 import rospy
 from geometry_msgs.msg import Pose
@@ -31,7 +31,7 @@ trajectory_radius_longitudinal_topic = (prefix+'/setpoints/r_x',Float64)
 trajectory_radius_lateral_topic = (prefix+'/setpoints/r_y',Float64)
 trajectory_radius_vertical_topic = (prefix+'/setpoints/r_z',Float64)
 trajectory_begin_timer_topic = (prefix+'/begin',Bool)
-moveto_topic = ('/'+drone_name+'/drone/moveto',MoveToCommand)
+moveto_topic = ('/'+drone_name+'/drone/moveto_debug',MoveToCommand)
 
 class TrajectoryGenerator:
     """Class that creates a trajectory and publishes it using geometry_msgs/Pose messages"""
@@ -94,16 +94,13 @@ class TrajectoryGenerator:
         self.p_x_wp = self.trajectory_start_position['x']
         self.p_y_wp = self.trajectory_start_position['y']
         self.p_z_wp = self.trajectory_start_position['z']
-        self.r_x = 1
-        self.r_y = 0
-        self.r_z = 7
-        self.v_x = 4
+        self.r_x = 3
+        self.r_y = 3
+        self.r_z = 2
+        self.v_x = 0
         self.v_y = 0
-        self.v_z = 0
+        self.v_z = 2
         self.static_waypoint = Waypoint()
-        self.static_waypoint.x = self.p_x_wp
-        self.static_waypoint.y = self.p_y_wp
-        self.static_waypoint.z = self.p_z_wp
         self.trajectory_type_modifier = "static"
         return
 
@@ -262,8 +259,7 @@ class TrajectoryGenerator:
         msg.v_y = self.v_y_wp
         msg.v_z = self.v_z_wp   
         self.waypoints_publisher.publish(msg)
-        print("sending waypoint:")
-        print(msg)
+        print("self.p_z_wp,",self.p_z_wp)
 
 
         #Parrot headquarter in Paris is the default home location
@@ -297,18 +293,18 @@ if __name__ == '__main__':
         trajectory_generator.trajectory_type_modifier_function()
         trajectory_generator.publish_trajectory()
         trajectory_generator.t += trajectory_generator.delta_t
-        # omega_x = trajectory_generator.v_x / trajectory_generator.r_x
-        # omega_y = trajectory_generator.v_y / trajectory_generator.r_y
-        # omega_z = trajectory_generator.v_z / trajectory_generator.r_z
-        # print("r_x:",trajectory_generator.r_x)
-        # print("r_y:",trajectory_generator.r_y)
-        # print("r_z:",trajectory_generator.r_z)
-        # print("v_x:",trajectory_generator.v_x)
-        # print("v_y:",trajectory_generator.v_y)
-        # print("v_z:",trajectory_generator.v_z)
+        omega_x = trajectory_generator.v_x / trajectory_generator.r_x
+        omega_y = trajectory_generator.v_y / trajectory_generator.r_y
+        omega_z = trajectory_generator.v_z / trajectory_generator.r_z
+        print("r_x:",trajectory_generator.r_x)
+        print("r_y:",trajectory_generator.r_y)
+        print("r_z:",trajectory_generator.r_z)
+        print("v_x:",trajectory_generator.v_x)
+        print("v_y:",trajectory_generator.v_y)
+        print("v_z:",trajectory_generator.v_z)
 
-        # print("omega_z =",omega_z)
-        # if trajectory_generator.t > 2*np.pi/omega_z:
-        #     trajectory_generator.timer_publisher.publish(True)
-        #     trajectory_generator.t = 0
+        print("omega_x =",omega_x)
+        if trajectory_generator.t > 2*np.pi/omega_z:
+            trajectory_generator.timer_publisher.publish(True)
+            trajectory_generator.t = 0
         rate.sleep()

@@ -5,14 +5,14 @@
 <!-- <arg name="cut_off_ang_freq" default="0.3"/> -->
 <arg name="publish_hz" default="100"/>
 <group ns="$(arg drone_name)">
-    <node name="anafi_control_waypoint_mpc_node" pkg="anafi_control" type="anafi_control_waypoint_mpc.py" output="screen" >
+    <node name="sphinx_waypoint_mpc_node" pkg="anafi_control" type="sphinx_waypoint_mpc.py" output="screen" >
         <param name="drone_name" value="$(arg drone_name)" />
         <param name="publish_hz" value="10" />
     </node>
 
-    <node name="anafi_control_publish_stability_axes_node" pkg="anafi_control" type="anafi_control_publish_stability_axes.py" respawn="true" output="screen">
+    <!-- <node name="sphinx_body_fixed_frame_publisher_node" pkg="docking_sphinx" type="sphinx_publish_copter_body_fixed_frame.py" respawn="true" output="screen">
         <param name="drone_name" value="$(arg drone_name)"/>
-    </node>
+    </node> -->
 
     <!-- <node name="vz_pid" pkg="pid" type="controller" output="screen" >
         <param name="Kp" value="0.9" />

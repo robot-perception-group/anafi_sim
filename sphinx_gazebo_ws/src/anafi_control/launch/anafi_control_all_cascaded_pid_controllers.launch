@@ -17,7 +17,10 @@
            <arg name = "drone_name" value = "$(arg drone_name)" /> 
         </include> 
 
-		<!-- <include file="$(find anafi_control)/launch/anafi_control_publish_stability_axes.launch">
+		<include file="$(find anafi_control)/launch/anafi_control_publish_stability_axes.launch">
+        </include> 
+		
+		<!-- <include file="$(find anafi_control)/launch/anafi_control_publish_world_axes.launch">
         </include>  -->
 
 
@@ -44,6 +47,8 @@
 		    <param name="Kd" value="0"/>
 			<param name="upper_limit" value="30.64" /> 
 			<param name="lower_limit" value="-30.64" />
+			<!-- <param name="upper_limit" value="0" /> 
+			<param name="lower_limit" value="0" /> -->
 			<param name="windup_limit" value="0" />
 			<param name="max_loop_frequency" value="1000.0" />
 			<param name="min_loop_frequency" value="1.0" />
@@ -58,6 +63,7 @@
 			<param name="Kd" value="0." />
 			<param name="upper_limit" value="10" />
 			<param name="lower_limit" value="-10" />
+			<!-- <param name="windup_limit" value="0.05" /> -->
 			<param name="windup_limit" value="5" />
 			<param name="max_loop_frequency" value="1000.0" />
 			<param name="min_loop_frequency" value="1.0" />
@@ -72,6 +78,8 @@
 		    <param name="Kd" value="-0"/>
 			<param name="upper_limit" value="30.64" /> 
 			<param name="lower_limit" value="-30.64" />
+			<!-- <param name="upper_limit" value="0.0" /> 
+			<param name="lower_limit" value="-0.0" /> -->
 			<param name="windup_limit" value="10" />
 			<param name="max_loop_frequency" value="1000.0" />
 			<param name="min_loop_frequency" value="1.0" />
@@ -83,7 +91,7 @@
 
 
 		<node name="pid_z_ac" pkg="pid" type="controller"  output="screen" >
-            <param name="node_name" value="pid_yaw" />
+            <param name="node_name" value="pid_z_ac" />
             <param name="Kp" value="1" />
             <param name="Ki" value="0.0" />
             <param name="Kd" value="0.001" />
@@ -103,7 +111,9 @@
             <param name="Kp" value="0.6" />
             <param name="Ki" value="0.2" />
             <param name="Kd" value="0.003" />
-            <param name="upper_limit" value="180" />
+            <!-- <param name="upper_limit" value="3" />
+            <param name="lower_limit" value="-3"/> -->
+			<param name="upper_limit" value="180" />
             <param name="lower_limit" value="-180"/>
             <param name="windup_limit" value="0.5" />
             <param name="max_loop_frequency" value="1000.0" />
@@ -117,8 +127,6 @@
 
     </group>
     
-
-
 
 
 

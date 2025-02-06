@@ -1,3 +1,4 @@
+#!/home/raven/venvs/sphinx_with_gazebo/bin/python
 import osqp
 import numpy as np
 from scipy import sparse
@@ -12,7 +13,6 @@ from anafi_control.msg import Waypoint
 from olympe_bridge.msg import PilotingCommand
 from anafi_control.msg import State
 from tf.transformations import euler_from_quaternion
-import time
 
 
 
@@ -33,7 +33,22 @@ yaw_pid_control_effort_topic = ('/'+drone_name+'/yaw_pid/control_effort',Float64
 
 rpyt_topic = ('/'+drone_name+'/drone/rpyt',PilotingCommand)
 position_error_topic = ('/'+drone_name+'/position_error_debug',Vector3Stamped)
+ext_force_debug_topic = ('/'+drone_name+'/ext_force_debug',Vector3Stamped)
 
+x_state_debug_topic = ('/'+drone_name+'/x_state_debug',Float64MultiArray)
+x_desired_debug_topic = ('/'+drone_name+'/x_desired_debug',Float64MultiArray)
+eint_x_debug_topic = ('/'+drone_name+'/eint_x_debug',Float64MultiArray)
+eint_y_debug_topic = ('/'+drone_name+'/eint_y_debug',Float64MultiArray)
+eint_z_debug_topic = ('/'+drone_name+'/eint_z_debug',Float64MultiArray) 
+eint_vx_debug_topic = ('/'+drone_name+'/eint_vx_debug',Float64MultiArray)
+eint_vy_debug_topic = ('/'+drone_name+'/eint_vy_debug',Float64MultiArray)
+eint_vz_debug_topic = ('/'+drone_name+'/eint_vz_debug',Float64MultiArray)
+trajectory_x_debug_topic = ('/'+drone_name+'/trajectory_x_debug',Float64MultiArray)
+trajectory_y_debug_topic = ('/'+drone_name+'/trajectory_y_debug',Float64MultiArray)
+trajectory_z_debug_topic = ('/'+drone_name+'/trajectory_z_debug',Float64MultiArray)
+trajectory_vx_debug_topic = ('/'+drone_name+'/trajectory_vx_debug',Float64MultiArray)
+trajectory_vy_debug_topic = ('/'+drone_name+'/trajectory_vy_debug',Float64MultiArray)
+trajectory_vz_debug_topic = ('/'+drone_name+'/trajectory_vz_debug',Float64MultiArray)
 
 
 class MPCOSQPWaypoint():
@@ -57,8 +72,24 @@ class MPCOSQPWaypoint():
         #publishers
         self.rpyt_publisher = rospy.Publisher(rpyt_topic[0],rpyt_topic[1],queue_size=0)
         self.position_error_debug_publisher = rospy.Publisher(position_error_topic[0],position_error_topic[1],queue_size=0)
+        self.ext_force_publisher = rospy.Publisher(ext_force_debug_topic[0],ext_force_debug_topic[1],queue_size=0)
         self.yaw_pid_state_publisher = rospy.Publisher(yaw_pid_state_topic[0],yaw_pid_state_topic[1],queue_size=0)
         self.yaw_pid_setpoint_publisher = rospy.Publisher(yaw_pid_setpoint_topic[0],yaw_pid_setpoint_topic[1],queue_size=0)
+        self.x_state_debug_publisher = rospy.Publisher(x_state_debug_topic[0],x_state_debug_topic[1],queue_size=0)
+        self.x_desired_debug_publisher = rospy.Publisher(x_desired_debug_topic[0],x_desired_debug_topic[1],queue_size=0)
+        self.eint_x_debug_publisher = rospy.Publisher(eint_x_debug_topic[0],eint_x_debug_topic[1],queue_size=0)
+        self.eint_y_debug_publisher = rospy.Publisher(eint_y_debug_topic[0],eint_y_debug_topic[1],queue_size=0)
+        self.eint_z_debug_publisher = rospy.Publisher(eint_z_debug_topic[0],eint_z_debug_topic[1],queue_size=0)
+        self.eint_vx_debug_publisher = rospy.Publisher(eint_vx_debug_topic[0],eint_vx_debug_topic[1],queue_size=0)
+        self.eint_vy_debug_publisher = rospy.Publisher(eint_vy_debug_topic[0],eint_vy_debug_topic[1],queue_size=0)
+        self.eint_vz_debug_publisher = rospy.Publisher(eint_vz_debug_topic[0],eint_vz_debug_topic[1],queue_size=0)
+
+        self.trajectory_x_debug_publisher = rospy.Publisher(trajectory_x_debug_topic[0],trajectory_x_debug_topic[1],queue_size=0)
+        self.trajectory_y_debug_publisher = rospy.Publisher(trajectory_y_debug_topic[0],trajectory_y_debug_topic[1],queue_size=0)
+        self.trajectory_z_debug_publisher = rospy.Publisher(trajectory_z_debug_topic[0],trajectory_z_debug_topic[1],queue_size=0)
+        self.trajectory_vx_debug_publisher = rospy.Publisher(trajectory_vx_debug_topic[0],trajectory_vx_debug_topic[1],queue_size=0)
+        self.trajectory_vy_debug_publisher = rospy.Publisher(trajectory_vy_debug_topic[0],trajectory_vy_debug_topic[1],queue_size=0)        
+        self.trajectory_vz_debug_publisher = rospy.Publisher(trajectory_vz_debug_topic[0],trajectory_vz_debug_topic[1],queue_size=0)
         return
 
     def set_mpc_parameters(self):
@@ -77,6 +108,10 @@ class MPCOSQPWaypoint():
         #Don't use hard constraints on the integral terms
         self.eint_min = np.array([-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf])
         self.eint_max = np.array([ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+
+                                #      x_ref        x      y_ref      y         z_ref           z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int   
+        # self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.4,    0.4,   6,       0,       0,    0e0])
+        # self.weights_QN =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   3e1,    3e1,   3e1,       0e1,    0e1,   0e0])
 
                                #      x_ref    x      y_ref   y         z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
         self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.001,     0.001,   0.001,       0,      0,     0e0])
@@ -106,10 +141,7 @@ class MPCOSQPWaypoint():
         self.x_state = np.zeros(18) # in stability axes, x_state = [x_ref,x,y_ref,y,vx_ref,vx,vy_ref,vy_x_eint.y_eint,vx_eint,vy_eint]
 
         #Transformation
-        #Wait a couple of seconds to give stability axes publishing node time to come up
-        time.sleep(5)
         self.tfBuffer = tf2_ros.Buffer()
-        
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
         #Pid
@@ -118,12 +150,17 @@ class MPCOSQPWaypoint():
         self.yaw_control_state = 0
 
         self.pos_error_interval = 0.1 #s
-        self.pos_error_list = int(self.pos_error_interval*rospy.get_param("/anafi/sphinx_interface_node/publish_hz"))*[np.array([0,0,0])]
+        self.pos_error_list = int(self.pos_error_interval*100)*[np.array([0,0,0])]
         return
 
     def set_up_mpc_problem(self):
         # Discrete time model of a quadcopter
         
+        #State x = [x_ref,x,y_ref,y,z_ref,z,vx_ref,vx,vy_ref,vy,vz_ref,vz]
+        #Augmented state x_aug (used for MPC) x_aug = [x,x]
+        #Augmented state x_aug = [x,z], where z = [x_int_error,y_int_error,z_int_error,vx_int_error,vy_int_error,vz_int_error]]
+
+
         self.Ad = sparse.csc_matrix(np.block([
             #Update of states x
             [np.eye(6), self.dt*np.eye(6),np.zeros((6,6))], #update of positional states
@@ -185,7 +222,11 @@ class MPCOSQPWaypoint():
         self.xr[16,:] = 0            * self.xr[16,:]  #vy int state should become 0
         self.xr[17,:] = 0            * self.xr[17,:]  #vz int state should become 0
 
+
+        #External forces
         self.x0 = self.xbegin
+        self.ext_force = np.zeros((self.N,2))
+        self.ext_force = self.calc_ext_force()
 
 
 
@@ -267,9 +308,12 @@ class MPCOSQPWaypoint():
         solve_successful = True
         # Check solver status
         if res.info.status not in ['solved','solved inaccurate']:
+            #raise ValueError('OSQP did not solve the problem!')
             print("OSQP did not solve the problem!")
             solve_successful = False
+            # print("res.x =",res.x)
         else:
+            # print("\033[0m Found solution.")
             pass
 
         if np.any(res.x == None):
@@ -293,6 +337,44 @@ class MPCOSQPWaypoint():
 
                 self.x_trajectory[j+1,:] = self.Ad.dot(self.x_trajectory[j]) + self.Bd.dot(ctrl)
                 self.u_trajectory[j,:] = ctrl
+
+
+            msg_eint_x = Float64MultiArray()
+            msg_eint_y = Float64MultiArray()
+            msg_eint_z =  Float64MultiArray()
+            msg_eint_vx = Float64MultiArray()
+            msg_eint_vy = Float64MultiArray()
+            msg_eint_vz = Float64MultiArray()
+            msg_trajectory_x = Float64MultiArray()
+            msg_trajectory_y = Float64MultiArray()
+            msg_trajectory_z = Float64MultiArray()
+            msg_trajectory_vx = Float64MultiArray()
+            msg_trajectory_vy = Float64MultiArray()
+            msg_trajectory_vz = Float64MultiArray()
+            msg_eint_x.data = self.x_trajectory[:,12]
+            msg_eint_y.data = self.x_trajectory[:,13]
+            msg_eint_z.data = self.x_trajectory[:,14]
+            msg_eint_vx.data = self.x_trajectory[:,15]
+            msg_eint_vy.data = self.x_trajectory[:,16]
+            msg_eint_vz.data = self.x_trajectory[:,17]
+            msg_trajectory_x.data = self.x_trajectory[:,1]
+            msg_trajectory_y.data = self.x_trajectory[:,3]
+            msg_trajectory_z.data = self.x_trajectory[:,5]
+            msg_trajectory_vx.data = self.x_trajectory[:,7]
+            msg_trajectory_vy.data = self.x_trajectory[:,9]
+            msg_trajectory_vz.data = self.x_trajectory[:,11]
+            self.eint_x_debug_publisher.publish(msg_eint_x)
+            self.eint_y_debug_publisher.publish(msg_eint_y)
+            self.eint_z_debug_publisher.publish(msg_eint_z)
+            self.eint_vx_debug_publisher.publish(msg_eint_vx)
+            self.eint_vy_debug_publisher.publish(msg_eint_vy)
+            self.eint_vz_debug_publisher.publish(msg_eint_vz)
+            self.trajectory_x_debug_publisher.publish(msg_trajectory_x)
+            self.trajectory_y_debug_publisher.publish(msg_trajectory_y)
+            self.trajectory_z_debug_publisher.publish(msg_trajectory_z)
+            self.trajectory_vx_debug_publisher.publish(msg_trajectory_vx)
+            self.trajectory_vy_debug_publisher.publish(msg_trajectory_vy)
+            self.trajectory_vz_debug_publisher.publish(msg_trajectory_vz)
         return solve_successful
     
     def update_x0(self):
@@ -347,9 +429,14 @@ class MPCOSQPWaypoint():
         xr[16,:] =  self.x_desired[16] #integral error state vy should be set to 0
         xr[17,:] =  self.x_desired[17] #integral error state vz should be set to 0        
 
+
+       
+        # print("|||||||xr[-1] =",xr[-1])
         
         q_update = np.hstack([-Q_update.dot(xr[:,:self.N]).flatten(), -QN_update.dot(xr[:,self.N]),
                     np.zeros(self.N*self.nu)])
+
+
 
         #Update constraints
         umins = np.tile(self.umin,(self.N,1))
@@ -378,7 +465,16 @@ class MPCOSQPWaypoint():
         msg_pos_error.header.stamp = rospy.Time.now()
         msg_pos_error.header.frame_id = "world"
         msg_pos_error.vector = Vector3(self.x_state[0]-self.x_state[1],self.x_state[2]-self.x_state[3],self.x_state[3]-self.x_state[4])
-        self.position_error_debug_publisher.publish(msg_pos_error)
+        # self.position_error_debug_publisher.publish(msg_pos_error)
+        
+        msg_x_state = Float64MultiArray()
+        msg_x_state.data = self.x_state
+        self.x_state_debug_publisher.publish(msg_x_state)
+        msg_x_desired = Float64MultiArray()
+        msg_x_desired.data = self.x_desired
+        # self.x_desired_debug_publisher.publish(msg_x_desired)
+
+        
         return
 
     
@@ -423,6 +519,32 @@ class MPCOSQPWaypoint():
         self.x_desired[15] = 0
         self.x_desired[16] = 0
         self.x_desired[17] = 0
+
+
+        # #Transform to body fixed frame
+        # p = PoseStamped()
+        # v = Vector3Stamped()
+        # p.header.stamp = rospy.Time.now()
+        # v.header.stamp = rospy.Time.now()
+        # p.pose.position = Point(msg.x,msg.y,msg.z)
+        # p.pose.orientation = Quaternion(*quaternion_from_euler(0,0,np.deg2rad(msg.yaw)))
+        # v.vector = Vector3(msg.v_x,msg.v_y,msg.v_z)
+        # pt = self.transform_pose(p,"hummingbird/stability_axes","world")
+        # # pt_sa = self.transform_pose(p,"anafi/stability_axes","world")
+        # vt = self.transform_vector3(v,"hummingbird/stability_axes","world")
+        # self.x_desired = np.array([pt.pose.position.x,pt.pose.position.x,pt.pose.position.y,pt.pose.position.y,vt.vector.x,vt.vector.x,vt.vector.y,vt.vector.y,0,0,0,0])
+        # self.x_state[0] = pt.pose.position.x
+        # self.x_state[2] = pt.pose.position.y
+        # self.x_state[4] = vt.vector.x
+        # self.x_state[6] = vt.vector.y
+        # self.vz_setpoint_publisher.publish(Float64(pt.pose.position.z))
+        # q = pt.pose.orientation
+        # (roll,pitch,yaw)= euler_from_quaternion([q.x,q.y,q.z,q.w])
+        # self.yaw_pid_state_publisher.publish(Float64(0))
+        # self.yaw_pid_setpoint_publisher.publish(Float64(yaw))
+
+        # print("read waypoints")
+        # print("set self.x_desired to",self.x_desired)
         return
     
     def read_vz_control_effort(self,msg):
@@ -435,6 +557,7 @@ class MPCOSQPWaypoint():
 
 
     def transform_vector3(self,vector3,target_frame_name,original_frame_name):
+        print(target_frame_name)
         trans_world_to_target_frame = self.tfBuffer.lookup_transform(target_frame_name,original_frame_name, rospy.Time())
         vector3_transformed = tf2_geometry_msgs.do_transform_vector3(vector3,trans_world_to_target_frame)
         return vector3_transformed
@@ -451,9 +574,25 @@ class MPCOSQPWaypoint():
         v = Vector3Stamped()
         v.header.stamp = rospy.Time.now()
 
-        v.vector.x = self.u_trajectory[0,0] 
-        v.vector.y = self.u_trajectory[0,1]
-        v.vector.z = self.x_trajectory[5,11] 
+
+
+        v.vector.x = self.u_trajectory[0,0] # backup 1
+        v.vector.y = self.u_trajectory[0,1]# backup 1
+
+
+        v.vector.z = self.x_trajectory[5,11] #backup 5
+
+
+
+        # print("================")
+        # print("u_trajectory",self.u_trajectory[1,:])
+        # print("z x_trajectory",self.x_trajectory[:,4])
+        # print("z x_trajectory",self.x_trajectory[:,11])
+        # print("state",self.x_state)
+
+
+        # print("================")
+
         vt = self.transform_vector3(v,drone_name+"/stability_axes","world")
 
         self.yaw_pid_state_publisher.publish(np.rad2deg(self.yaw_control_state))
@@ -461,18 +600,31 @@ class MPCOSQPWaypoint():
 
 
 
-        phi = np.rad2deg(np.arcsin(vt.vector.x/9.81)) #deg
-        theta = np.rad2deg(np.arcsin(vt.vector.y/9.81)) #deg
-        psi_dot = self.yaw_control_effort #deg /2
+        # theta = np.clip(np.rad2deg(np.arcsin(vt.vector.x/9.81)),-0.5,0.5) #deg
+        # phi = np.clip(np.rad2deg(np.arcsin(vt.vector.y/9.81)),-0.5,0.5) #deg
+        # psi_dot = np.clip(self.yaw_control_effort,-3,3) #deg/s
+        theta = np.rad2deg(np.arcsin(vt.vector.x/9.81))#deg
+        phi = np.rad2deg(np.arcsin(vt.vector.y/9.81)) #deg
+        psi_dot = self.yaw_control_effort #deg/s
         msg = PilotingCommand()
-        msg.roll = -theta #account for conversion to NED of firmware
-        msg.pitch = phi #account for conversion to NED of firmware
-        msg.yaw = psi_dot 
+        msg.roll = phi #account for conversion to NED of firmware
+        msg.pitch = theta #account for conversion to NED of firmware
+        msg.yaw = -psi_dot 
         msg.gaz = vt.vector.z
         self.rpyt_publisher.publish(msg)
         return
     
     
+    def calc_ext_force(self):
+        ext_force = np.zeros((self.N,2))
+        msg = Vector3Stamped()
+        msg.header.frame_id = drone_name+"/stability_axes"
+        msg.header.stamp = rospy.Time.now()
+        msg.vector.x = ext_force[0,0]
+        msg.vector.y = ext_force[0,1]
+        self.ext_force_publisher.publish(msg)
+        return ext_force
+
 
 if __name__ == '__main__':
     #Init node
@@ -482,6 +634,10 @@ if __name__ == '__main__':
     debug = MPCOSQPWaypoint()
     rate = rospy.Rate(debug.execution_freq)
 
+    # fig_pos,axes_pos = debug.create_scalar_plot()
+    # fig_F_tang,axes_F_tang = debug.create_vector_plot()
+    # fig_acc,axes_acc = debug.create_debug_plot()
+
     print("Begin generation of solutions with desired frequency of",debug.execution_freq,"hz...")
     while not rospy.is_shutdown():
         
@@ -490,10 +646,19 @@ if __name__ == '__main__':
         if solve_successfull: 
             print("\033[95msolution found\033[0m")
             debug.update_mpc_problem()
+            # print("update mpc problem worked")
+            # debug.publish_motor_speed()
+            # print("publish motor worked")
             debug.publish_rpyt()
         else:
             print("\033[93mCould not find solution")
             debug.update_mpc_problem()
             debug.rpyt_publisher.publish(PilotingCommand())
+
+            # debug.publish_relative_target_pose_in_stability_axes()
+
+ 
+        #Update values
+        # debug.update_pos_error()
 
         rate.sleep()

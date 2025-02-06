@@ -1,3 +1,22 @@
+
+'''
+This scripts defines a ROS node that  provides information about the moving platform and the drone that are simulated in Gazebo. 
+
+It publishes the relative position, velocity and acceleration on separate topics.
+The coordinate frame in which the values are displayed is the stability axes frame
+    - Relative position: drone_name/landing_simulation/relative_target_drone/state/twist/pose
+    - Relative velocity: drone_name/landing_simulation/relative_target_drone/state/twist/twist
+    - Relative acceleration: drone_name/landing_simulation/relative_target_drone/state/twist/acceleration
+
+Furthermore, this node publishes on two different topics the entire movement information required for the landing process for both, 
+the drone and the moving platform in stability axes and the world frame.
+    - Drone: drone_name/landing_simulation/drone/state
+             drone_name/landing_simulation/world_frame/drone/state
+    - Moving platform: drone_name/landing_simulation/target/state
+                       drone_name/landing_simulation/world_frame/target/state
+
+'''
+
 import rospy
 from std_msgs.msg import Float64, Float64MultiArray, Float32
 import tf2_ros
@@ -13,6 +32,7 @@ from anafi_control.msg import State
 import numpy as np
 from copy import deepcopy
 from tf.transformations import quaternion_from_euler
+import time
 
 #Parameters
 node_name='cascaded_pid_relative_info_node'
@@ -225,6 +245,7 @@ def compute_rpy_std_msg(q):
 if __name__ == '__main__':
     #Init nodes and subscribers
     rospy.init_node(node_name)
+    time.sleep(5)
 
     drone_subscriber = rospy.Subscriber(sphinx_drone_topic[0],sphinx_drone_topic[1],read_drone)
     waypoint_subscriber = rospy.Subscriber(waypoint_topic[0],waypoint_topic[1],read_waypoint)
@@ -242,7 +263,8 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         try:
-            #transform drone and moving platform position and velocity in target frame .                                    
+            #transform drone and moving platform position and velocity in target frame . 
+            # print(drone_frame)  
             trans_world_to_drone_frame = tfBuffer.lookup_transform(drone_frame,wp_frame, rospy.Time())
 
             target_state_in_drone_frame.pose = tf2_geometry_msgs.do_transform_pose(target_state_in_wp_frame.pose,trans_world_to_drone_frame)

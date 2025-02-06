@@ -12,7 +12,7 @@
     <param name = "publish_hz" value = "$(arg publish_hz)" />
     <param name = "trajectory_start_position/x" value = "0" />
     <param name = "trajectory_start_position/y" value = "0" />
-    <param name = "trajectory_start_position/z" value = "7" />
+    <param name = "trajectory_start_position/z" value = "10" />
     <param name = "trajectory_start_orientation/phi" value = "0" />
     <param name = "trajectory_start_orientation/theta" value = "0" />
     <param name = "trajectory_start_orientation/psi" value = "0" />

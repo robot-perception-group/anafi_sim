@@ -1,14 +1,22 @@
+'''
+Function publishes the stability axes as tf frame. The stability axes xy-plane is always parallel to earth surface but the x-axes is aligned with the x-axis of the body-fixed
+frame.
+For this purpose, the odometry topic of the drone that is published by the rotorS package is read and whenever a message is received a the stability axes is published
+as tf frame.
+'''
+
 import rospy
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from nav_msgs.msg import Odometry
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster, TransformStamped
 from geometry_msgs.msg import PoseStamped
+from anafi_control.msg import State
 
 node_name = 'anafi_control_publish_stability_axes_node'
 drone_name = rospy.get_param(rospy.get_namespace()+node_name+'/drone_name','anafi')
 
 #Odometry topic of the drone
-pose_topic = ("/"+drone_name+"/drone/pose_enu",PoseStamped)
+state_topic = ("/"+drone_name+"/position_control/state_enu",State)
 
 #Initialize node
 rospy.init_node(node_name)
@@ -21,7 +29,7 @@ def publish_stability_axes_as_tf_frame(parent_frame,br,phi,theta,psi,x,y,z):
     t = TransformStamped()
     t.header.stamp = rospy.Time.now()
     t.header.frame_id = parent_frame
-    t.child_frame_id = drone_name + "/stability_axes_anafi_control"
+    t.child_frame_id = drone_name + "/stability_axes"
     t.transform.translation.x = x
     t.transform.translation.y = y
     t.transform.translation.z = z
@@ -31,17 +39,17 @@ def publish_stability_axes_as_tf_frame(parent_frame,br,phi,theta,psi,x,y,z):
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]    
     br.sendTransform(t)
-    print(t.header.stamp,"Anafi control: Stability axes frame transformation sent.")
+    # print(t.header.stamp,"Anafi control: Stability axes frame transformation sent.",drone_name + "/stability_axes")
     return
 
-def read_pose_msg(msg): 
+def read_state(msg): 
     """Function reads the Sphinx message from the sphinx interface node.
     """
-    x = msg.pose.position.x
-    y = msg.pose.position.y
-    z = msg.pose.position.z
+    x = msg.pose.pose.position.x
+    y = msg.pose.pose.position.y
+    z = msg.pose.pose.position.z
 
-    phi,theta,psi = euler_from_quaternion([msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w])
+    phi,theta,psi = euler_from_quaternion([msg.pose.pose.orientation.x,msg.pose.pose.orientation.y,msg.pose.pose.orientation.z,msg.pose.pose.orientation.w])
 
 
 
@@ -53,6 +61,6 @@ def read_pose_msg(msg):
     publish_stability_axes_as_tf_frame('world',br, phi, theta, psi, x,y,z)
     return
 
-sphinx_subscriber = rospy.Subscriber(pose_topic[0],pose_topic[1],read_pose_msg)
+sphinx_subscriber = rospy.Subscriber(state_topic[0],state_topic[1],read_state)
 rospy.loginfo("publisher node for stability axes frame started ")
 rospy.spin()

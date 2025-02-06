@@ -1,3 +1,9 @@
+'''
+Script provides an interface in which the control efforts (accel) from the x,y,z cascaded pid loops is combined in a 
+RollPitchYawrateThrist message and published.
+Also this script provides the interface for the yaw control single pid control node. 
+'''
+
 import rospy
 from std_msgs.msg import Float64, Float64MultiArray
 from geometry_msgs.msg import PoseStamped, TwistStamped, QuaternionStamped, Vector3Stamped
@@ -136,16 +142,15 @@ class PIDControlInterface():
         return
     
     def read_yaw_effort(self,msg):
-        self.piloting_command.yaw = msg.data
+        self.piloting_command.yaw = -msg.data
         return
     
     def read_x_velocity_effort(self,msg):
-        self.piloting_command.pitch = np.deg2rad(msg.data)
-        self.piloting_command.pitch = msg.data
+        self.piloting_command.pitch = msg.data 
         return
     
     def read_y_velocity_effort(self,msg):
-        self.piloting_command.roll = msg.data
+        self.piloting_command.roll = -msg.data
 
         return
     
@@ -185,6 +190,10 @@ class PIDControlInterface():
         rpy_command_world.pose.orientation.y = q_pc[1]
         rpy_command_world.pose.orientation.z = q_pc[2]
         rpy_command_world.pose.orientation.w = q_pc[3]
+
+        # print("world: ",rpy_command_world)
+
+
         rpy_command_stability_axes = PoseStamped()
         try:
             trans_world_to_drone_frame = self.tfBuffer.lookup_transform(self.drone_frame,self.wp_frame, rospy.Time())
@@ -197,7 +206,7 @@ class PIDControlInterface():
 
         
         self.piloting_command_stability_axes.roll = np.rad2deg(roll_sa)
-        self.piloting_command_stability_axes.pitch =  np.rad2deg(pitch_sa)
+        self.piloting_command_stability_axes.pitch = np.rad2deg(pitch_sa) 
         self.piloting_command_stability_axes.yaw = self.piloting_command.yaw
         self.piloting_command_stability_axes.gaz = self.piloting_command.gaz
         return
@@ -216,6 +225,7 @@ class PIDControlInterface():
 if __name__ == '__main__':
 
     pid_interface = PIDControlInterface()
+    #Init nodes and subscribers
     
    
     #Init rate
