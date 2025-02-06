@@ -84,7 +84,7 @@ sudo apt install python3-pip
 ### Downloading the code
 The repository includes several submodules that need to be considered during download. This can be achieved with the following command
 ```
-git clone --recurse-submodules https://github.com/robot-perception-group/sphinx_with_gazebo_code.git
+git clone --recurse-submodules https://github.com/robot-perception-group/anafi_sim.git
 ```
 
 ## Installation
@@ -108,9 +108,9 @@ pip3 install -r requirements.txt
 ### Initializing the catkin workspaces
 Make sure ROS is installed, then run
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
+cd ~/anafi_sim/sphinx_gazebo_ws
 catkin_make
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 ```
 
 ## Using the framework
@@ -127,16 +127,16 @@ These approaches are explained in more detail in the following.
 The following comands will launch the Sphinx simulator, the simulated Anafi firmware, the anafi_ros bridge and the interface retrieving the drone state from the Sphinx simulator (ground truth data, i.e. no noise is present).
 In a terminal window, run
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 ./src/sphinx_with_gazebo/launch/launch_mpc_test_environment_in_virtual_screens.sh
 ```
 #### Sphinx with empty Gazebo environment
 The following comands will launch the Sphinx simulator jointly with an empty world in Gazebo, the simulated Anafi firmware, the anafi_ros bridge and the interface retrieving the drone state from the Sphinx simulator (ground truth data, i.e. no noise is present).
 In a terminal window, run
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 ./src/sphinx_with_gazebo/launch/launch sphinx_with_gazebo_environment_in_virtual_screens.sh
 ```
 #### Sphinx with custom Gazebo environment
@@ -148,8 +148,8 @@ To include the anafi drone in your own Gazebo environment, you can modify the fi
 If you wish to load our airship simulation together with the anafi drone you can use the launch command ```roslaunch blimp_description sphinx_blimp_gcs_wind.launch```. Then, you can launch the simulation as follows.
 
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 ./src/sphinx_with_gazebo/launch/sphinx_with_gazebo_environment_in_virtual_screens.sh
 ```
 
@@ -159,8 +159,8 @@ Before you can launch one of the proivided tracking controllers, two preliminary
 
 To do so, once a simulation environment has been launched, in another terminal window run 
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 rostopic pub /anafi/drone/location_spawn_point_enu geometry_msgs/PointStamped "header:
   seq: 0
   stamp:
@@ -176,8 +176,8 @@ point:
 This is required to shift the spawn point of the drone in Sphinx into the origin of the simulated world, i.e. all waypoints commands sent to the drone will be relative to the true origin of the simulated world instead of the spawn point of the drone.
 Furthermore, it is advisable to start publishing waypoints before launching a controller. In order to send a waypoint making the drone hover at a stationary position right after takeoff, run the following commands
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 rostopic pub /anafi/position_control/waypoint anafi_control/Waypoint "{x: 0.0, y: 0.0, z: 1.0, v_x: 0.0, v_y: 0.0, v_z: 0.0, yaw: 0.0}" -r10
 ```
 This will publish a waypoint with a frequency of 10hz that makes the drone hover right above origin of the world in an altitude of 1m.
@@ -190,8 +190,8 @@ Two control frameworks are available
 #### Launching the PID-based controller framework
 To launch the PID-based controller framework, run
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 roslaunch anafi_control anafi_controll_all_cascaded_pid_controllers.launch
 ```
 In this framework, four control loops are created that independently control the drone's motion in longitudinal, lateral, and vertical direction as well as its heading, i.e. the yaw angle.
@@ -200,8 +200,8 @@ All control loops are in a single-input-single-output configuration where the co
 
 To launch the MPC framework, run
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 roslaunch anafi_control anafi_control_waypoint_mpc.launch
 ```
 This launches a MPC to control calculating optimal solutions for the motion in lontitudinal, lateral and vertical direction. The motion around the vertical axis, i.e. the heading and therefore the yaw angle is controlled by the same PID-based control loop than in the PID-based controller framework.
@@ -210,8 +210,8 @@ This launches a MPC to control calculating optimal solutions for the motion in l
 In order to log the waypoints sent to the drone as well as the drone's ground truth and estimated position, orientation and velocity data, you can run a logging node using the following commands.
 In a terminal window, execute
 ```
-cd ~/sphinx_with_gazebo_code/sphinx_gazebo_ws
-source ~/sphinx_with_gazebo_code/sphinx_with_gazebo/other_files/setup.bash
+cd ~/anafi_sim/sphinx_gazebo_ws
+source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
 roslaunch sphinx_with_gazebo anafi_control_logger.launch
 ```
 You can specifiy a path to where the log files should be saved in the file [anafi_control_logger.py](sphinx_gazebo_ws/src/sphinx_with_gazebo/scripts/anafi_control_logger.py)
