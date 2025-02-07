@@ -138,7 +138,7 @@ In a terminal window, run
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
 source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
-./src/sphinx_with_gazebo/launch/launch sphinx_with_gazebo_environment_in_virtual_screens.sh
+./src/sphinx_with_gazebo/launch/launch_sphinx_with_gazebo_environment_in_virtual_screens.sh
 ```
 #### Sphinx with custom Gazebo environment
 To include the anafi drone in your own Gazebo environment, you can modify the file [launch_anafi_in_world.sh](sphinx_gazebo_ws/src/sphinx_with_gazebo/launch/launch_anafi_in_world.sh). Just comment out the  line ```roslaunch anafi_description anafi_in_world.launch``` and replace it with your own launch command. In the .launch file include the following line to make sure that the anafi drone is loaded in your world.
