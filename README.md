@@ -130,8 +130,7 @@ In a terminal window, run
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
 source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
-./src/sphinx_with_gazebo
-/launch/launch_sphinx_mpc_test_environment_in_virtual_screens.sh
+./src/sphinx_with_gazebo/launch/launch_sphinx_mpc_test_environment_in_virtual_screens.sh
 ```
 #### Sphinx with empty Gazebo environment
 The following comands will launch the Sphinx simulator jointly with an empty world in Gazebo, the simulated Anafi firmware, the anafi_ros bridge and the interface retrieving the drone state from the Sphinx simulator (ground truth data, i.e. no noise is present).
