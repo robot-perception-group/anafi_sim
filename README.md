@@ -80,6 +80,7 @@ Install some basic packages first by running the commands
 sudo apt update
 sudo apt install screen
 sudo apt install python3-pip
+sudo apt install libgoogle-glog-dev 
 ```
 ### Downloading the code
 The repository includes several submodules that need to be considered during download. This can be achieved with the following command
