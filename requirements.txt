@@ -4,7 +4,6 @@ numpy==1.17.4
 tf==1.13.2
 PyYAML==6.0.2
 rospkg==1.6.0
-rospkg_modules==1.5.1
 sensor_msgs==1.13.1
 tf2_geometry_msgs==0.7.7
 tf2_ros==0.7.7
