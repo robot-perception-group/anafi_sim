@@ -111,7 +111,7 @@ Make sure ROS is installed, then run
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
 catkin_make
-source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
 ```
 
 ## Using the framework
@@ -129,7 +129,7 @@ The following comands will launch the Sphinx simulator, the simulated Anafi firm
 In a terminal window, run
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
-source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
 ./src/sphinx_with_gazebo/launch/launch_mpc_test_environment_in_virtual_screens.sh
 ```
 #### Sphinx with empty Gazebo environment
@@ -150,7 +150,7 @@ If you wish to load our airship simulation together with the anafi drone you can
 
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
-source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
 ./src/sphinx_with_gazebo/launch/sphinx_with_gazebo_environment_in_virtual_screens.sh
 ```
 
@@ -161,7 +161,7 @@ Before you can launch one of the proivided tracking controllers, two preliminary
 To do so, once a simulation environment has been launched, in another terminal window run 
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
-source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
 rostopic pub /anafi/drone/location_spawn_point_enu geometry_msgs/PointStamped "header:
   seq: 0
   stamp:
@@ -202,7 +202,7 @@ All control loops are in a single-input-single-output configuration where the co
 To launch the MPC framework, run
 ```
 cd ~/anafi_sim/sphinx_gazebo_ws
-source ~/anafi_sim/sphinx_with_gazebo/other_files/setup.bash
+source ~/anafi_sim/sphinx_gazebo_ws/other_files/setup.bash
 roslaunch anafi_control anafi_control_waypoint_mpc.launch
 ```
 This launches a MPC to control calculating optimal solutions for the motion in lontitudinal, lateral and vertical direction. The motion around the vertical axis, i.e. the heading and therefore the yaw angle is controlled by the same PID-based control loop than in the PID-based controller framework.
