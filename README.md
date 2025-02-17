@@ -6,7 +6,7 @@ Welcome to the repository providing the code used for the paper
 
 by Pascal Goldschmid and Aamir Ahmad
 
-The paper can be found here.
+The paper can be found [here](https://arxiv.org/abs/2502.10218).
 
 Experimental data (log files, videos of real world flights, etc.) can be found [here](https://keeper.mpdl.mpg.de/d/d9aace8256ae41e8878f/).
 
