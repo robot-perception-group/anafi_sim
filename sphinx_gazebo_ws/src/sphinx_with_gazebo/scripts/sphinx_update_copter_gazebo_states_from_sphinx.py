@@ -129,9 +129,9 @@ class ControlCopterFromSphinx():
         #All values in body fixed frame
         cam_pose = PoseStamped()
         cam_pose.header.stamp = rospy.Time.now()
-        cam_pose.pose.position.x = 0.1 # [m] offset of camera from base
+        cam_pose.pose.position.x = 0.088 # [m] offset of camera from base
         cam_pose.pose.position.y = 0 # [m] offset of camera from base
-        cam_pose.pose.position.z = 0.005 # [m] offset of camera from base
+        cam_pose.pose.position.z = 0.000 # [m] offset of camera from base
         cam_pose.pose.orientation = self.camera_attitude.quaternion #camera attitude in body fixed frame given as quaternions
         return cam_pose
     

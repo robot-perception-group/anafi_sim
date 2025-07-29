@@ -71,8 +71,8 @@ class MPCOSQPWaypoint():
 
 
 
-        self.vmin = -np.array([10,10,2]) #x,y,z - velocity limits, z-component is used for MPC input
-        self.vmax =  np.array([10,10,2]) #x,y,z - velocity limits, z-component is used for MPC input
+        self.vmin = -np.array([8,8,4]) #x,y,z - velocity limits, z-component is used for MPC input
+        self.vmax =  np.array([8,8,4]) #x,y,z - velocity limits, z-component is used for MPC input 
 
         #Don't use hard constraints on the integral terms
         self.eint_min = np.array([-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf])
@@ -111,6 +111,7 @@ class MPCOSQPWaypoint():
         self.tfBuffer = tf2_ros.Buffer()
         
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
+        
 
         #Pid
         self.yaw_control_effort = 0
@@ -435,7 +436,7 @@ class MPCOSQPWaypoint():
 
 
     def transform_vector3(self,vector3,target_frame_name,original_frame_name):
-        trans_world_to_target_frame = self.tfBuffer.lookup_transform(target_frame_name,original_frame_name, rospy.Time())
+        trans_world_to_target_frame = self.tfBuffer.lookup_transform(target_frame_name,original_frame_name, rospy.Time(),rospy.Duration(0.2))
         vector3_transformed = tf2_geometry_msgs.do_transform_vector3(vector3,trans_world_to_target_frame)
         return vector3_transformed
     
@@ -454,7 +455,9 @@ class MPCOSQPWaypoint():
         v.vector.x = self.u_trajectory[0,0] 
         v.vector.y = self.u_trajectory[0,1]
         v.vector.z = self.x_trajectory[5,11] 
+        print("v = ",v.vector)
         vt = self.transform_vector3(v,drone_name+"/stability_axes","world")
+        print("vt = ",vt.vector)
 
         self.yaw_pid_state_publisher.publish(np.rad2deg(self.yaw_control_state))
         self.yaw_pid_setpoint_publisher.publish(Float64(self.waypoint[6]))

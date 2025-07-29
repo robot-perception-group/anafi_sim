@@ -21,7 +21,7 @@ def publish_stability_axes_as_tf_frame(parent_frame,br,phi,theta,psi,x,y,z):
     t = TransformStamped()
     t.header.stamp = rospy.Time.now()
     t.header.frame_id = parent_frame
-    t.child_frame_id = drone_name + "/stability_axes_anafi_control"
+    t.child_frame_id = drone_name + "/stability_axes"
     t.transform.translation.x = x
     t.transform.translation.y = y
     t.transform.translation.z = z

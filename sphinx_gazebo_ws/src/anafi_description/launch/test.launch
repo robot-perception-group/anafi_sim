@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+	<include file="$/home/pgoldschmid/src/airship_ws/src/anafi_sim/sphinx_gazebo_ws/sr/launch/spawn_anafi.launch>"></include>
+	<!-- <include file="$(find docking)/launch/compute_relative_information.launch"></include> -->
+
+
+</launch>
+
+

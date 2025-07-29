@@ -1,34 +1,18 @@
-# A Multi-Simulation Approach with Model Predictive Control for Anafi Drones
+# Integrated Multi-Simulation Environments for Aerial Robotics Research
 
 Welcome to the repository providing the code used for the paper 
 
-**A Multi-Simulation Approach with Model Predictive Control for Anafi Drones**
+**Integrated Multi-Simulation Environments for Aerial Robotics Research**
 
 by Pascal Goldschmid and Aamir Ahmad
 
-The paper was accepted for publication at ECMR 2025 and can be found [here](https://arxiv.org/abs/2502.10218).
+The paper can be found here.
 
 Experimental data (log files, videos of real world flights, etc.) can be found [here](https://keeper.mpdl.mpg.de/d/d9aace8256ae41e8878f/).
 
 If you have any questions, comments or suggestions please contact pascal.goldschmid@ifr.uni-stuttgart.de
 
 ![Sphinx and Gazebo running in parallel](/sphinx_gazebo.gif)
-
-If you use our work, please cite it as 
-```
-@misc{goldschmid2025,
-      title={A Multi-Simulation Approach with Model Predictive Control for Anafi Drones}, 
-      author={Pascal Goldschmid and Aamir Ahmad},
-      year={2025},
-      eprint={2502.10218},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2502.10218}, 
-}
-```
-
-
-
 
 ---
 

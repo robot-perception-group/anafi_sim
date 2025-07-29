@@ -3,7 +3,7 @@
 <launch>
   <arg name="anafi_drone" default="anafi"/>
   <arg name="namespace" default="$(arg anafi_drone)"/>
-  <arg name="x" default="0.0"/>
+  <arg name="x" default="-4.0"/>
   <arg name="y" default="0.0"/>
   <arg name="z" default="0.2"/>
   <arg name="verbose" default="true"/>

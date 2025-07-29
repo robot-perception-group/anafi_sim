@@ -625,7 +625,7 @@ class Anafi(threading.Thread):
 			pitch_frame_of_reference=self.gimbal_frame,  # {'absolute', 'relative', 'none'}
 			pitch=-msg.pitch,  # (in position mode [-135,105])
 			roll_frame_of_reference=self.gimbal_frame,  # {'absolute', 'relative', 'none'}
-			roll=msg.roll)) # (in position mode [-38,38])
+			roll=msg.roll))# (in position mode [-38,38])
 		
 
 	def spawn_point_callback(self,msg):
