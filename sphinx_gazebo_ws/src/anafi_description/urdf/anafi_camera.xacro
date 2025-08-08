@@ -37,7 +37,9 @@
             <always_on>true</always_on>
             <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
                 <frame_name>/camera_link_optical</frame_name>    
-                <frameName>/camera_link_optical</frameName>            
+                <frameName>/camera_link_optical</frameName>  
+                <imageTopicName>image_raw_gazebo_timestamp</imageTopicName>
+                <cameraInfoTopicName>camera_info_gazebo_timestamp</cameraInfoTopicName>          
             </plugin>
         </sensor>
     </gazebo>
