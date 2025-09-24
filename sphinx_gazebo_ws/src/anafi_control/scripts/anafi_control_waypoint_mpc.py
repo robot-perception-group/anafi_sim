@@ -79,11 +79,18 @@ class MPCOSQPWaypoint():
         self.eint_max = np.array([ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
 
                                #      x_ref    x      y_ref   y         z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
-        self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.001,     0.001,   0.001,       0,      0,     0e0])
-        self.weights_QN =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   5e0,    5e0,   5e0,       0e1,    0e1,   0e0])
+        # self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.001,     0.001,   0.001,       0,      0,     0e0])
+        # self.weights_QN =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   5e0,    5e0,   5e0,       0e1,    0e1,   0e0])
         
         
-        self.weight_R = 0.2
+        # self.weight_R = 0.2
+
+        self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.0,     0.0,   0.0,       0,      0,     0e0])
+        self.weights_QN =   np.array([ 3.0e3 , 3.0e3, 3.0e3,  3.0e3,    3.0e3,       3.0e3,     0e2,   0e2,    0e2,       0e2,   0e2,       0e1,   8e3,   8e3,   8e3,      0e0,    0e0,   0e0])
+        
+        
+        self.weight_R = 0.20
+
 
         #Solver params
         self.solver_settings = {}
