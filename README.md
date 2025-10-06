@@ -254,3 +254,13 @@ When started, the trajectory generator publishes a static waypoint. To activate 
 rostopic pub /trajectory_generator/trajectory_type_modifer std_msgs/String "data: 'circle_xy_z:rectilinear_z'"
 ```
 This activates a circular trajectory in the xy-plane with a simultaeous rectilinear motion in the vertical direction. For other trajectory types, please check the code of the [trajectory_generator_node](sphinx_gazebo_ws/src/anafi_control/scripts/trajectory_generator.py).
+
+## Ethical Use Notice
+
+This project is licensed under the **Hippocratic License**, promoting ethical and responsible use.
+
+- Intended for research, education, environmental, and humanitarian purposes.  
+- Not for use in weapons, surveillance, or any activity violating [human rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights).  
+
+By using this software, you agree to uphold these principles and use it only for peaceful and constructive applications.
+
