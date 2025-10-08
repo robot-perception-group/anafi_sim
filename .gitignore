@@ -1,5 +1,6 @@
 sphinx_gazebo_ws/build/
 sphinx_gazebo_ws/devel/
 src/anafi_ros/src/olympe_bridge/__pycache__/
-src/airship_simulation/
+sphinx_gazebo_ws/src/airship_simulation/
 sphinx_gazebo_ws/src/sphinx_with_gazebo/
+sphinx_gazebo_ws/src/anafi_ros/src/olympe_bridge/__pycache__/
