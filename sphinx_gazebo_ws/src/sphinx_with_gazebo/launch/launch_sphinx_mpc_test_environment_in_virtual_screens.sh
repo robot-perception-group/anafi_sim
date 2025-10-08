@@ -52,4 +52,7 @@ rosservice call /anafi/drone/takeoff "{}"
 echo "Sent take off command. Waiting 10s to ensure proper execution..."
 sleep 10
 
+echo "Disabling battery discharge..."
+sphinx-cli param lipobattery/lipobattery discharge_speed_factor 0
+
     

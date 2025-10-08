@@ -28,8 +28,8 @@ from sphinx_with_gazebo.msg import Sphinx
 
 #read gust params
 rospack = rospkg.RosPack()
-max_number_episodes = 30
-log_file_path = "/home/pgoldschmid/src/sphinx_with_gazebo_code/experiments_evaluation/sim_data"
+max_number_episodes = 3
+log_file_path = "/home/pgoldschmid/src/dev_anafi_sim/anafi_sim/experiments_evaluation/sim_data"
 
 #read launch params
 node_name = "sphinx_logger_node"
@@ -44,8 +44,6 @@ uav_state_sphinx_topic = ("/"+drone_name+"/sphinx/drone_data",Sphinx)
 waypoint_topic =  ('/'+drone_name+'/position_control/waypoint',Waypoint)
 trajectory_begin_timer_topic = ('/trajectory_generator'+'/begin',Bool)
 
-#publisher topics
-activate_wind_gust_topic = ("/gazebo/ActivateWindGustGenerator",Bool)
 
 class GustDockingRecorder():
     def __init__(self):
@@ -82,8 +80,6 @@ class GustDockingRecorder():
         self.waypoint_subscriber = rospy.Subscriber(waypoint_topic[0],waypoint_topic[1],self.read_waypoint)
         self.trajectory_begin_timer_subscriber = rospy.Subscriber(trajectory_begin_timer_topic[0],trajectory_begin_timer_topic[1],self.read_begin_timer)
 
-        #publisher        
-        self.activate_wind_gust_generator_publisher = rospy.Publisher(activate_wind_gust_topic[0],activate_wind_gust_topic[1],queue_size = 1)
 
         #Flags and increments
         self.begin_flag = False
