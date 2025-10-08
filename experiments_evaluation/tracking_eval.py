@@ -4,7 +4,9 @@ import pandas as pd
 
 
 
-data = pd.read_csv("sim_data/z_rpm_2_2_pid.csv")
+# data = pd.read_csv("sim_data/z_rpm_2_2_pid.csv")
+data = pd.read_csv("sim_data/episode_0.csv")
+# data = pd.read_csv("sim_data/sim_circle_1_1.csv")
 time = (data["time"] - data["time"].iloc[0])/10**9
 x_sphinx = data["x_sphinx"]    
 y_sphinx = data["y_sphinx"]    
