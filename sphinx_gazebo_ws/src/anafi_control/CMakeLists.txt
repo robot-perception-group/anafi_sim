@@ -168,6 +168,7 @@ include_directories(
 # in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/anafi_control_waypoint_mpc.py
+  scripts/anafi_control_waypoint_mpc_regular.py
   scripts/anafi_control_cascaded_pid_interface.py
   scripts/anafi_control_cascaded_pid_relative_info.py
   scripts/trajectory_generator.py
