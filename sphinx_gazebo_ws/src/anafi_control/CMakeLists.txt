@@ -172,6 +172,7 @@ catkin_install_python(PROGRAMS
   scripts/anafi_control_cascaded_pid_interface.py
   scripts/anafi_control_cascaded_pid_relative_info.py
   scripts/trajectory_generator.py
+  scripts/line_trajectory_generator.py
   scripts/anafi_control_publish_stability_axes.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
