@@ -43,7 +43,7 @@ class GenerateTrajectory():
 
         self.p_x = self.simpson_integration(0,self.v_x,0.1)
         self.p_y = self.simpson_integration(0,self.v_y,0.1)
-        self.p_z = self.simpson_integration(20,self.v_z,0.1)
+        self.p_z = np.clip(self.simpson_integration(20,self.v_z,0.1),5,35)
 
         
     def a_long(self,x):
