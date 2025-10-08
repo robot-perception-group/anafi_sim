@@ -1,2 +1,4 @@
 sphinx_gazebo_ws/build/
 sphinx_gazebo_ws/devel/
+sphinx_gazebo_ws/src/sphinx_with_gazebo/src/sphinx_with_gazebo/__pycache__/
+sphinx_gazebo_ws/src/anafi_ros/src/olympe_bridge/__pycache__/
