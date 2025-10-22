@@ -1,5 +1,4 @@
 #!/home/raven/venvs/sphinx_with_gazebo/bin/python
-#!/usr/bin/env python
 
 import rospy
 from geometry_msgs.msg import Pose
