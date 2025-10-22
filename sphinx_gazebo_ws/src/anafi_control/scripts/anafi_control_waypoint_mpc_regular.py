@@ -376,7 +376,7 @@ class MPCOSQPWaypoint():
 
         v.vector.x = self.u_trajectory[0,0] 
         v.vector.y = self.u_trajectory[0,1]
-        v.vector.z = self.x_trajectory[5,11] 
+        v.vector.z = self.x_trajectory[5,5] 
         vt = self.transform_vector3(v,drone_name+"/stability_axes","world")
 
         self.yaw_pid_state_publisher.publish(np.rad2deg(self.yaw_control_state))
