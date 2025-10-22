@@ -94,11 +94,11 @@ class TrajectoryGenerator:
         self.p_x_wp = self.trajectory_start_position['x']
         self.p_y_wp = self.trajectory_start_position['y']
         self.p_z_wp = self.trajectory_start_position['z']
-        self.r_x = 2
-        self.r_y = 2
-        self.r_z = 7
-        self.v_x = 2
-        self.v_y = 2
+        self.r_x = 3
+        self.r_y = 3
+        self.r_z = 2
+        self.v_x = 5
+        self.v_y = 5
         self.v_z = 0
         self.static_waypoint = Waypoint()
         self.static_waypoint.x = self.p_x_wp
@@ -297,9 +297,12 @@ if __name__ == '__main__':
         trajectory_generator.trajectory_type_modifier_function()
         trajectory_generator.publish_trajectory()
         trajectory_generator.t += trajectory_generator.delta_t
-        omega_x = trajectory_generator.v_x / trajectory_generator.r_x
+        if np.isclose(trajectory_generator.v_x,0) and not np.isclose(trajectory_generator.v_z,0):
+            omega = trajectory_generator.v_z / trajectory_generator.r_z
+        else:
+            omega = trajectory_generator.v_x / trajectory_generator.r_x
+
         # omega_y = trajectory_generator.v_y / trajectory_generator.r_y
-        # omega_z = trajectory_generator.v_z / trajectory_generator.r_z
         # print("r_x:",trajectory_generator.r_x)
         # print("r_y:",trajectory_generator.r_y)
         # print("r_z:",trajectory_generator.r_z)
@@ -307,8 +310,9 @@ if __name__ == '__main__':
         # print("v_y:",trajectory_generator.v_y)
         # print("v_z:",trajectory_generator.v_z)
 
-        print("omega_z =",omega_x)
-        if trajectory_generator.t > 2*np.pi/omega_x:
+        print("omega =",omega)
+        print("trajectory_generator.t =",trajectory_generator.t)
+        if trajectory_generator.t > 2*np.pi/omega:
             trajectory_generator.timer_publisher.publish(True)
             trajectory_generator.t = 0
         rate.sleep()
