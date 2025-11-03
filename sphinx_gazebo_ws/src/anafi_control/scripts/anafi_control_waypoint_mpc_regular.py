@@ -7,7 +7,7 @@ from std_msgs.msg import Float64MultiArray, Float64
 from geometry_msgs.msg import Vector3Stamped, Vector3
 import tf2_ros
 import tf2_geometry_msgs 
-from sphinx_with_gazebo.msg import Sphinx
+# from sphinx_with_gazebo.msg import Sphinx
 from anafi_control.msg import Waypoint
 from olympe_bridge.msg import PilotingCommand
 from anafi_control.msg import State
@@ -114,8 +114,8 @@ class MPCOSQPWaypoint():
         self.yaw_control_setpoint = 0
         self.yaw_control_state = 0
 
-        self.pos_error_interval = 0.1 #s
-        self.pos_error_list = int(self.pos_error_interval*rospy.get_param("/anafi/sphinx_interface_node/publish_hz"))*[np.array([0,0,0])]
+        # self.pos_error_interval = 0.1 #s
+        # self.pos_error_list = int(self.pos_error_interval*rospy.get_param("/anafi/sphinx_interface_node/publish_hz"))*[np.array([0,0,0])]
         return
 
     def set_up_mpc_problem(self):

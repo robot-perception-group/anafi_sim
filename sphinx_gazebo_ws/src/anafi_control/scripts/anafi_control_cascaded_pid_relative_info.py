@@ -27,7 +27,7 @@ from gazebo_msgs.srv import GetModelState
 import tf2_geometry_msgs 
 from tf.transformations import euler_from_quaternion, quaternion_multiply, quaternion_inverse, quaternion_from_euler
 from anafi_control.msg import State, Waypoint
-from sphinx_with_gazebo.msg import Sphinx
+# from sphinx_with_gazebo.msg import Sphinx
 from anafi_control.msg import State
 import numpy as np
 from copy import deepcopy

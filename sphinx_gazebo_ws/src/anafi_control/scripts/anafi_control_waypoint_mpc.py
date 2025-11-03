@@ -7,7 +7,7 @@ from std_msgs.msg import Float64MultiArray, Float64
 from geometry_msgs.msg import Vector3Stamped, Vector3
 import tf2_ros
 import tf2_geometry_msgs 
-from sphinx_with_gazebo.msg import Sphinx
+# from sphinx_with_gazebo.msg import Sphinx
 from anafi_control.msg import Waypoint
 from olympe_bridge.msg import PilotingCommand
 from anafi_control.msg import State
@@ -65,7 +65,7 @@ class MPCOSQPWaypoint():
         # Params
         #mpc params
         self.dt = 0.1
-        self.N = 35
+        self.N = 40
         self.amin = -np.array([5,5,5]) #x,y - acceleration limits, should correspond to limit attitude angle, used for MPC input
         self.amax =  np.array([5,5,5]) #x,y - acceleration limits, should correspond to limit attitude angle, used for MPC input
 
@@ -78,12 +78,12 @@ class MPCOSQPWaypoint():
         self.eint_min = np.array([-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf])
         self.eint_max = np.array([ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
 
-                               #      x_ref    x      y_ref   y         z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
-        self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.0,     0.0,   0.0,       0,      0,     0e0])
-        self.weights_QN =   np.array([ 3.0e3 , 3.0e3, 3.0e3,  3.0e3,    3.0e3,       3.0e3,     0e2,   0e2,    0e2,       0e2,   0e2,       0e1,   8e3,   8e3,   8e3,      0e0,    0e0,   0e0])
+                               #      x_ref          x     y_ref   y       z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
+        self.weights_Q  =   np.array([       0.0 ,  0.1,   0.0,    0.1,    0.0,        0.1,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.0,     0.0,   0.0,       0,      0,     0e0])
+        self.weights_QN =   0.8*np.array([ 0.0e3 , 1.0e5, 0.0e3,  1.0e5,   0.0e3,      1.0e5,     0e2,   0e2,    0e2,       0e2,   0e2,       0e1,   1e5,     1e5,   1e5,      0e0,    0e0,   0e0])
         
         
-        self.weight_R = 0.20
+        self.weight_R = 10
 
         #Solver params
         self.solver_settings = {}
@@ -117,8 +117,8 @@ class MPCOSQPWaypoint():
         self.yaw_control_setpoint = 0
         self.yaw_control_state = 0
 
-        self.pos_error_interval = 0.1 #s
-        self.pos_error_list = int(self.pos_error_interval*rospy.get_param("/anafi/sphinx_interface_node/publish_hz"))*[np.array([0,0,0])]
+        # self.pos_error_interval = 0.1 #s
+        # self.pos_error_list = int(self.pos_error_interval*rospy.get_param("/anafi/sphinx_interface_node/publish_hz"))*[np.array([0,0,0])]
         return
 
     def set_up_mpc_problem(self):
