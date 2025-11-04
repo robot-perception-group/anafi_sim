@@ -65,7 +65,7 @@ class MPCOSQPWaypoint():
         # Params
         #mpc params
         self.dt = 0.1
-        self.N = 35
+        self.N = 40
         self.amin = -np.array([5,5,5]) #x,y - acceleration limits, should correspond to limit attitude angle, used for MPC input
         self.amax =  np.array([5,5,5]) #x,y - acceleration limits, should correspond to limit attitude angle, used for MPC input
 
@@ -78,12 +78,14 @@ class MPCOSQPWaypoint():
         self.eint_min = np.array([-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf])
         self.eint_max = np.array([ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
 
-                               #      x_ref    x      y_ref   y         z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
-        self.weights_Q  =   np.array([ 0.0 ,   0.0,   0.0,    0.0,       0.0,        0.0,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.0,     0.0,   0.0,       0,      0,     0e0])
-        self.weights_QN =   np.array([ 3.0e3 , 3.0e3, 3.0e3,  3.0e3,    3.0e3,       3.0e3,     0e2,   0e2,    0e2,       0e2,   0e2,       0e1,   8e3,   8e3,   8e3,      0e0,    0e0,   0e0])
+
+        #                        #      x_ref    x      y_ref   y         z_ref        z         vx_ref  vx     vy_ref      vy    vz_ref      vz    x_int   y_int  z_int    vx_int  vy_int    vz_int          
+        self.weights_Q  =   np.array([ 0.0 ,   0.1,   0.0,    0.1,       0.0,        0.1,       0e1,   0e1,    0e1,       0e1,   0e1,       0e1,   0.0,     0.0,   0.0,       0,      0,     0e0])
+        self.weights_QN =   0.8*np.array([ 0.0e3 , 1.0e5, 0.0e3,  1.0e5,    0.0e3,       1.0e5,     0e2,   0e2,    0e2,       0e2,   0e2,       0e1,   1.0e5,   1.0e5,   1.0e5,      0e0,    0e0,   0e0])        
         
-        
-        self.weight_R = 0.20
+
+
+        self.weight_R = 10
 
         #Solver params
         self.solver_settings = {}
@@ -137,6 +139,7 @@ class MPCOSQPWaypoint():
                 [ 0, 0, 0, 0, 0, 0, 0, 0, 1,-1 ,0, 0, 0, 0, 0, 0, 1, 0], #relative velocity in y-direction
                 [ 0, 0, 0, 0, 0, 0, 0, 0 ,0, 0 ,1,-1, 0, 0, 0, 0, 0, 1], #relative velocity in z-direction
             ])]
+
         ]))
         self.Bd = sparse.csc_matrix(np.block([
             [np.array([
@@ -293,6 +296,7 @@ class MPCOSQPWaypoint():
 
                 self.x_trajectory[j+1,:] = self.Ad.dot(self.x_trajectory[j]) + self.Bd.dot(ctrl)
                 self.u_trajectory[j,:] = ctrl
+
         return solve_successful
     
     def update_x0(self):
@@ -302,12 +306,12 @@ class MPCOSQPWaypoint():
         x0[9]  = np.clip(x0[9],self.vmin[1],self.vmax[1])
         x0[11] = np.clip(x0[11],self.vmin[2],self.vmax[2])
         #Initialize the integral error with the current error
-        x0[12] = np.clip(self.x0[12],self.eint_min[0],self.eint_max[0])
-        x0[13] = np.clip(self.x0[13],self.eint_min[1],self.eint_max[1])
-        x0[14] = np.clip(self.x0[14],self.eint_min[2],self.eint_max[2])
-        x0[15] = np.clip(self.x0[15],self.eint_min[3],self.eint_max[3])
-        x0[16] = np.clip(self.x0[16],self.eint_min[4],self.eint_max[4])
-        x0[17] = np.clip(self.x0[17],self.eint_min[5],self.eint_max[5])
+        x0[12] = np.clip(self.x0[12],self.eint_min[0],self.eint_max[0]) 
+        x0[13] = np.clip(self.x0[13],self.eint_min[1],self.eint_max[1]) 
+        x0[14] = np.clip(self.x0[14],self.eint_min[2],self.eint_max[2]) 
+        x0[15] = np.clip(self.x0[15],self.eint_min[3],self.eint_max[3]) 
+        x0[16] = np.clip(self.x0[16],self.eint_min[4],self.eint_max[4]) 
+        x0[17] = np.clip(self.x0[17],self.eint_min[5],self.eint_max[5]) 
         self.x0 = x0
         return
 
