@@ -6,7 +6,7 @@ Welcome to the repository providing the code used for the paper
 
 by Pascal Goldschmid and Aamir Ahmad
 
-The paper was accepted for publication at ECMR 2025 and can be found [here](https://arxiv.org/abs/2502.10218).
+The paper was accepted for publication at European Conference on Mobile Robotics (ECMR) 2025 and can be found on IEEE Xplore [here](https://ieeexplore.ieee.org/document/11163100) or on arXiv [here](https://arxiv.org/abs/2502.10218).
 
 Experimental data (log files, videos of real world flights, etc.) can be found [here](https://keeper.mpdl.mpg.de/d/d9aace8256ae41e8878f/).
 
@@ -16,15 +16,17 @@ If you have any questions, comments or suggestions please contact pascal.goldsch
 
 If you use our work, please cite it as 
 ```
-@misc{goldschmid2025,
-      title={A Multi-Simulation Approach with Model Predictive Control for Anafi Drones}, 
-      author={Pascal Goldschmid and Aamir Ahmad},
-      year={2025},
-      eprint={2502.10218},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2502.10218}, 
-}
+@INPROCEEDINGS{cite-key,
+  author={Goldschmid, Pascal and Ahmad, Aamir},
+  booktitle={2025 European Conference on Mobile Robots (ECMR)}, 
+  title={A Multi-Simulation Approach with Model Predictive Control for Anafi Drones}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-8},
+  keywords={Target tracking;Accuracy;Runtime;Atmospheric modeling;Predictive models;Real-time systems;Multi-robot systems;Mobile robots;Drones;Predictive control},
+  doi={10.1109/ECMR65884.2025.11163100}}
+
 ```
 
 
@@ -255,14 +257,12 @@ rostopic pub /trajectory_generator/trajectory_type_modifer std_msgs/String "data
 ```
 This activates a circular trajectory in the xy-plane with a simultaeous rectilinear motion in the vertical direction. For other trajectory types, please check the code of the [trajectory_generator_node](sphinx_gazebo_ws/src/anafi_control/scripts/trajectory_generator.py).
 
-##### Disclaimer
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+## Ethical Use Notice
+
+This project is licensed under the **Hippocratic License**, promoting ethical and responsible use.
+
+- Intended for research, education, environmental, and humanitarian purposes.  
+- Not for use in weapons, surveillance, or any activity violating [human rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights).  
+
+By using this software, you agree to uphold these principles and use it only for peaceful and constructive applications.
+
