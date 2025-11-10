@@ -4,9 +4,10 @@ import pandas as pd
 
 
 
-# data = pd.read_csv("sim_data/z_rpm_2_2_pid.csv")
-data = pd.read_csv("sim_data/episode_0.csv")
-# data = pd.read_csv("sim_data/sim_circle_1_1.csv")
+
+# data = pd.read_csv("sim_data/episode_2.csv")
+data = pd.read_csv("real_world_data/rpt/rpt_2_2_pid.csv")
+
 time = (data["time"] - data["time"].iloc[0])/10**9
 x_sphinx = data["x_sphinx"]    
 y_sphinx = data["y_sphinx"]    
@@ -38,9 +39,9 @@ dist_abs_max = np.max(np.abs(dist))
 # print("x_diff_abs_max  =",x_diff_abs_max)
 # print("y_diff_abs_max  =",y_diff_abs_max)
 # print("z_diff_abs_max =",z_diff_abs_max)
-print("max dist        =",dist_abs_max)
-print("mean dist       =",dist.mean())
-print("std  dist       =",dist.std())
+print("max dist        ={:.2f}".format(dist_abs_max))
+print("mean dist       ={:.2f}".format(dist.mean()))
+print("std  dist       ={:.2f}".format(dist.std()))
 
 
 
