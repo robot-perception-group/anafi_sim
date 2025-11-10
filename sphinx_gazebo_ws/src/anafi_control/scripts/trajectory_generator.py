@@ -31,7 +31,7 @@ trajectory_radius_longitudinal_topic = (prefix+'/setpoints/r_x',Float64)
 trajectory_radius_lateral_topic = (prefix+'/setpoints/r_y',Float64)
 trajectory_radius_vertical_topic = (prefix+'/setpoints/r_z',Float64)
 trajectory_begin_timer_topic = (prefix+'/begin',Bool)
-moveto_topic = ('/'+drone_name+'/drone/moveto',MoveToCommand)
+moveto_topic = ('/'+drone_name+'/drone/moveto_debug',MoveToCommand)
 
 class TrajectoryGenerator:
     """Class that creates a trajectory and publishes it using geometry_msgs/Pose messages"""
@@ -94,11 +94,11 @@ class TrajectoryGenerator:
         self.p_x_wp = self.trajectory_start_position['x']
         self.p_y_wp = self.trajectory_start_position['y']
         self.p_z_wp = self.trajectory_start_position['z']
-        self.r_x = 1
-        self.r_y = 0
+        self.r_x = 2
+        self.r_y = 2
         self.r_z = 7
-        self.v_x = 4
-        self.v_y = 0
+        self.v_x = 2
+        self.v_y = 2
         self.v_z = 0
         self.static_waypoint = Waypoint()
         self.static_waypoint.x = self.p_x_wp
