@@ -82,7 +82,7 @@ class GenerateTrajectory():
         # axes[2].set_title("Position")
         # axes[0].set_xlabel("Time [s]")
         # axes[1].set_xlabel("Time [s]")
-        axes[2].set_xlabel("Time [s]")
+        axes[2].set_xlabel("t [s]")
         axes[0].set_ylabel("Acceleration $[m/s^2]$")
         axes[1].set_ylabel("Velocity $[m/s]$")
         axes[2].set_ylabel("Position $[m]$")

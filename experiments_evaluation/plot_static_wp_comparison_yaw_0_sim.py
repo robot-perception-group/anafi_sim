@@ -67,6 +67,7 @@ axs[1].plot(time_pid_yaw_0, data_pid_yaw_0["y_anafi"], color='orange', label='$P
 axs[1].plot(time_blmpc_yaw_0, data_blmpc_yaw_0["y_anafi"], color='blue', label='$MPC-BL$')
 axs[1].plot(time_cempc_yaw_0, data_cempc_yaw_0["y_anafi"], color='darkslategrey', label='$MPC-CE$')
 axs[1].set_title('Y')
+axs[1].set_ylabel('y [m]')
 axs[1].set_yticks(major_ticks)
 axs[1].set_yticks(minor_ticks, minor=True)
 axs[1].grid(which='minor', alpha=0.6)

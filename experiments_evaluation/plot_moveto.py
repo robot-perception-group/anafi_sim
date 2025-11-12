@@ -25,6 +25,7 @@ line0, = ax1.plot(time, data["x_anafi"], color='darkorchid', label='Anafi Drone 
 line1, = ax1.plot(time, data["wp_x"], color='black',  label='Waypoint ')
 ax1.set_title('Waypoint Tracking (x-Direction)')
 ax1.set_ylabel('x [m]')
+ax1.set_xlabel('t [s]')
 # ax1.tick_params(axis="y",labelcolor="b")
 ax1.grid()
 
