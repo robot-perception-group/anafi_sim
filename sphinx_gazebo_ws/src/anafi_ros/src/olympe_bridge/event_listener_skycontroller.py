@@ -54,8 +54,10 @@ class EventListenerSkyController(olympe.EventListener):
 				self.skyctrl.msg_skycontroller.takeoff_land = True
 			elif event.args["button"] == 2:  # reset camera button
 				self.skyctrl.msg_skycontroller.reset_camera = True
+				# print("CAMERA RESET PRESSED")
 			elif event.args["button"] == 3:  # reset zoom button
 				self.skyctrl.msg_skycontroller.reset_zoom = True
+				# print("ZOOM RESET PRESSED")
 
 	# SkyController axes listener
 	@olympe.listen_event(grab_axis_event(_policy="wait"))  # https://developer.parrot.com/docs/olympe/arsdkng_mapper.html#olympe.messages.mapper.grab_axis_event

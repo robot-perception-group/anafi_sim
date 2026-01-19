@@ -554,9 +554,10 @@ class Anafi(threading.Thread):
             yaw_frame_of_reference='none',
             yaw=0.0,
             pitch_frame_of_reference=self.gimbal_frame,  # {'absolute', 'relative', 'none'}
-            pitch=-msg.pitch,  # (in position mode [-135,105])
-            roll_frame_of_reference=self.gimbal_frame,  # {'absolute', 'relative', 'none'}
-            roll=msg.roll)) # (in position mode [-38,38])
+            #pitch=-msg.pitch,  # (in position mode [-135,105])
+            #roll_frame_of_reference=self.gimbal_frame,  # {'absolute', 'relative', 'none'}
+            #roll=msg.roll)) # (in position mode [-38,38])
+        ))
 
     def spawn_point_callback(self,msg):
         self.msg_spawn_point = msg
@@ -939,6 +940,16 @@ class Anafi(threading.Thread):
         if self.skycontroller_enabled:
             self.msg_skycontroller.header.stamp = rospy.Time.now()
             self.pub_skyctrl_command.publish(self.msg_skycontroller)
+
+            if self.msg_skycontroller.reset_zoom:
+                print("\033[93m REQUESTED EMERGENCY SHUT DOWN OF ENGINES!\033[0m")
+                self.drone(olympe.messages.ardrone3.Piloting.Emergency())
+                print("\033[92m ENGINES SHUT DOWN!\033[0m")
+
+
+
+
+
             # Reset button pressing message
             self.msg_skycontroller.return_home = False
             self.msg_skycontroller.takeoff_land = False
