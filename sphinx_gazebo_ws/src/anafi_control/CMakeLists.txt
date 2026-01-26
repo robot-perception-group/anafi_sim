@@ -174,6 +174,7 @@ catkin_install_python(PROGRAMS
   scripts/trajectory_generator.py
   scripts/line_trajectory_generator.py
   scripts/anafi_control_publish_stability_axes.py
+  scripts/anafi_coordinate_frames_publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
