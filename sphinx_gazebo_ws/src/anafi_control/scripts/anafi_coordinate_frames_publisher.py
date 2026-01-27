@@ -1,7 +1,7 @@
 '''
 Class publishes all frames relevant for docking using the anafi drone and the apriltag detection. The script makes sure that the apriltag detection is considering the latency in the camera transmission.
 '''
-
+import math
 import rospy
 from tf.transformations import quaternion_from_euler, euler_from_quaternion, quaternion_inverse, quaternion_multiply, quaternion_from_matrix
 from nav_msgs.msg import Odometry
@@ -12,12 +12,11 @@ from geometry_msgs.msg import Vector3Stamped, PoseWithCovarianceStamped
 import numpy as np
 from apriltag_ros.msg import AprilTagDetectionArray, AprilTagDetection
 
-node_name = 'anafi_control_publish_stability_axes_node'
+node_name = 'anafi_coordinate_frames_publisher'
 drone_name = rospy.get_param(rospy.get_namespace()+node_name+'/drone_name','anafi')
 
 #Odometry topic of the drone
-state_topic = ("/"+drone_name+"/position_control/state_enu",State)
-gimbal_topic = ("/"+drone_name+"/gimbal/absolute",Vector3Stamped)
+
 
 
 class AnafiTfFramesPublisher():
@@ -43,7 +42,7 @@ class AnafiTfFramesPublisher():
         return
 
     def init_subscribers(self):
-        self.state_subscriber = rospy.Subscriber("/"+drone_name+"/position_control/state_enu",State,self.read_state)    
+        self.state_subscriber = rospy.Subscriber("/"+drone_name+"/position_control/state_nwu",State,self.read_state)    
         self.gimbal_subscriber = rospy.Subscriber("/"+drone_name+"/gimbal/absolute",Vector3Stamped,self.read_gimbal)    
         self.apriltag_subscriber = rospy.Subscriber("/tag_detections",AprilTagDetectionArray,self.read_apriltag)
         return
@@ -61,6 +60,7 @@ class AnafiTfFramesPublisher():
 
     def publish_stability_frame(self):
         """Function publishes the stability axes frame w.r.t. the world frame."""
+        # Coordinate frame of anafi drone: 
 
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
@@ -71,7 +71,7 @@ class AnafiTfFramesPublisher():
         t.transform.translation.z = self.drone_state.pose.pose.position.z
         
         phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
-        q = quaternion_from_euler(0, 0, -psi)
+        q = quaternion_from_euler(0, 0, psi)
         
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
@@ -93,7 +93,7 @@ class AnafiTfFramesPublisher():
 
         phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
         
-        q = quaternion_from_euler(phi,-theta,-psi)
+        q = quaternion_from_euler(phi,theta,psi)
 
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
@@ -109,18 +109,21 @@ class AnafiTfFramesPublisher():
         
         p_drone = np.array([self.drone_state.pose.pose.position.x, self.drone_state.pose.pose.position.y, self.drone_state.pose.pose.position.z])
         
+        # print('p_drone =',p_drone)
         
-        #Get euler angles of body-fixed frame of anafi drone with regard to the world frame
+        #Get euler angles of body-fixed frame of anafi drone with regard to the world frame. 
+        #The orientation of the anafi drone follows a north-west-up coordinate system
+
         phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
 
         #The gimbal position changes in the world frame due to the offset to the center of the anafi drone when the drone changes its attitude.
         #Some signs are negative to account for the coordinate frame that is used by the parrot anafi drone (north-west-up --> north-east-down?)
         cr = np.cos(phi)
         sr = np.sin(phi)
-        cp = np.cos(-theta)
-        sp = np.sin(-theta)
-        cy = np.cos(-psi)
-        sy = np.sin(-psi)
+        cp = np.cos(theta) #-
+        sp = np.sin(theta)#-
+        cy = np.cos(psi)#-
+        sy = np.sin(psi)#-
 
         #Calculate rotation matrix from body fixed to world frame
         R = np.array([
@@ -134,7 +137,10 @@ class AnafiTfFramesPublisher():
 
         #Rotate the offset vector which is described in the 
         p_gimbal_w = R @ p_gimbal_bf + p_drone
-    
+        # print('p_gimbal_w =',p_gimbal_w)
+
+        # print("p_gimbal_w =",p_gimbal_w)
+
         #Build the transformation
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
@@ -145,22 +151,36 @@ class AnafiTfFramesPublisher():
         t.transform.translation.z = p_gimbal_w[2]
 
         #Calculate gimbal orientation considering compensation capabilities of anafi drone (the drones roll and pitch angle is compensated, then the commanded roll and pitch angle are added)
-        gimbal_roll = -phi +   np.deg2rad(self.gimbal_absolute.vector.x) # compensation of drone roll + commanded gimbal roll angle
+        gimbal_roll = phi +   np.deg2rad(self.gimbal_absolute.vector.x) # compensation of drone roll + commanded gimbal roll angle
         gimbal_pitch = theta  + np.deg2rad(self.gimbal_absolute.vector.y) # compensation of drone pitch + commanded gimbal pitch angle
         gimbal_yaw = 0  # yaw of gimbal is fixed
 
         #Build the rotation of the quaternion
-        q = quaternion_from_euler(phi + gimbal_roll, -theta + gimbal_pitch, -psi + gimbal_yaw) # correct pitch angle sign to make sure that rviz displays tf frames correctly.
+        q = quaternion_from_euler(-phi + gimbal_roll, -theta + gimbal_pitch, psi + gimbal_yaw) # correct pitch angle sign to make sure that rviz displays tf frames correctly.
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]    
         self.br.sendTransform(t)
+
+        t_c = TransformStamped()
+        t_c.header.stamp = rospy.Time.now()
+        t_c.header.frame_id = drone_name + "/gimbal_frame"
+        t_c.child_frame_id =  drone_name + "/camera_frame"
+        t_c.transform.translation.x = 0
+        t_c.transform.translation.y = 0
+        t_c.transform.translation.z = 0
+        q_c = quaternion_from_euler(0,-math.pi/2.0,-math.pi/2.0) 
+        t_c.transform.rotation.x = q_c[0]
+        t_c.transform.rotation.y = q_c[1]
+        t_c.transform.rotation.z = q_c[2]
+        t_c.transform.rotation.w = q_c[3]
+        self.br.sendTransform(t_c)
         return
     
     def publish_apriltag_tf(self):
         p_drone_w = np.array([self.drone_state.pose.pose.position.x, self.drone_state.pose.pose.position.y, self.drone_state.pose.pose.position.z])
-        q_drone = np.array([self.drone_state.pose.pose.orientation.x, self.drone_state.pose.pose.orientation.y, self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
+        #q_drone = np.array([self.drone_state.pose.pose.orientation.x, self.drone_state.pose.pose.orientation.y, self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
 
          #Get euler angles of body-fixed frame of anafi drone with regard to the world frame
         phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
@@ -169,10 +189,10 @@ class AnafiTfFramesPublisher():
         #Some signs are negative to account for the coordinate frame that is used by the parrot anafi drone (north-west-up --> north-east-down?)
         cr = np.cos(phi)
         sr = np.sin(phi)
-        cp = np.cos(-theta)
-        sp = np.sin(-theta)
-        cy = np.cos(-psi)
-        sy = np.sin(-psi)
+        cp = np.cos(theta)
+        sp = np.sin(theta)
+        cy = np.cos(psi)
+        sy = np.sin(psi)
 
         #Calculate rotation matrix from body fixed to world frame
         Rwbf = np.array([
@@ -187,23 +207,38 @@ class AnafiTfFramesPublisher():
         #Rotate the offset vector which is described in the 
         p_gimbal_w = Rwbf @ p_gimbal_bf + p_drone_w
 
+        #Determining camera coordinate frame
         #Own experiments: when the tag is moved the following can be observed in the camera frame following applies:
-        #x: positive when tag is moved to the left in the camera image
-        #y: positive when tag is moved down in the camera image
-        #z: positive when tag is moved away from the camera
-        #Therefore it follows:
-        #x: forward, outwards the camera
-        #y: left, when looking along the x-axis from origin towards the tip of the x-axis
-        #z: upward.
+        #x: positive when tag is moved to the right in the camera image --> x-axis to the right
+        #y: positive when tag is moved down in the camera image --> y-axis down
+        #z: positive when tag is moved away from the camera --> z-axis forward, out of the camera
 
+        #The gimbal frame orientation is:
+        #x: forward
+        #y: left when looking from origin towards the tip of the x-axis
+        #z: upward
+
+
+        #Transformation from camera to gimbal:
+        # x_g = z_c
+        # y_g = -x_c
+        # z_g = -y_c
+
+
+        #Leads to transformation matrix:
+        # R_gc = np.array([
+        #    [0,0,1],
+        #    [-1,0,0],
+        #    [0,-1,0]
+        #])
 
         #Calculate gimbal orientation considering compensation capabilities of anafi drone (the drones roll and pitch angle is compensated, then the commanded roll and pitch angle are added)
         cr_g = np.cos(np.deg2rad(self.gimbal_absolute.vector.x))
         sr_g = np.sin(np.deg2rad(self.gimbal_absolute.vector.x))
         cp_g = np.cos(np.deg2rad(self.gimbal_absolute.vector.y))
         sp_g = np.sin(np.deg2rad(self.gimbal_absolute.vector.y))
-        cy_g = np.cos(-psi)
-        sy_g = np.sin(-psi)
+        cy_g = np.cos(psi)
+        sy_g = np.sin(psi)
 
         #Calculate rotation matrix from body fixed to world frame
         Rwg = np.array([
@@ -212,37 +247,18 @@ class AnafiTfFramesPublisher():
             [-sp_g,    cp_g*sr_g,             cp_g*cr_g           ]
         ])
 
-
-
-
-    
         p_tag_c = np.array([self.apriltag_pose.pose.pose.position.x,self.apriltag_pose.pose.pose.position.y,self.apriltag_pose.pose.pose.position.z])
         #Create rotation matrix that rotates from camera to gimbal 
         R_gc = np.array([
             [0,0,1],
-            [1,0,0],
+            [-1,0,0],
             [0,-1,0]
 
         ])
         p_tag_g = R_gc @ p_tag_c
 
-        #Use inverse in order to compensate for attitude changes of the anafi drone of the gimbal and thus the tag
-        # p_tag_w = np.linalg.inv(Rwbf) @ (p_tag_g + p_gimbal_bf) +  p_drone
-        p_tag_w = np.linalg.inv(Rwg) @ (p_tag_g )+ p_gimbal_w 
+        p_tag_w = Rwg @ (p_tag_g )+ p_gimbal_w 
 
-        #Handle rotation
-        #CURRENTLY, TAG ORIENTATION IS NEGLECTED; ONLY POSITION IS OF IMPORTANCE
-        # q_gc = quaternion_from_euler(np.pi/2,0,-np.pi/2)
-        # q_tag_c =  np.array([self.apriltag_pose.pose.pose.orientation.x,self.apriltag_pose.pose.pose.orientation.y,self.apriltag_pose.pose.pose.orientation.z,self.apriltag_pose.pose.pose.orientation.w])
-        
-        # q_tag_g = quaternion_multiply(q_gc,q_tag_c)
-
-        # q_g= quaternion_from_euler(np.deg2rad(self.gimbal_absolute.vector.x),np.deg2rad(self.gimbal_absolute.vector.y),-psi)
-
-        # q_tag_w = quaternion_multiply(quaternion_inverse(q_g),q_tag_g)
-
-        #deltas_tag_world = R @ deltas_tag
-    
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = 'world'
@@ -252,7 +268,23 @@ class AnafiTfFramesPublisher():
         t.transform.translation.z = p_tag_w[2]
 
 
+        #Ignore tag orientation for now, just use default quaternion
+        t.transform.rotation.x = 0
+        t.transform.rotation.y = 0
+        t.transform.rotation.z = 0
+        t.transform.rotation.w = 1
+        self.br.sendTransform(t)
 
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = drone_name +'/gimbal_frame'
+        t.child_frame_id =  "detected_tag_gimbal"
+        t.transform.translation.x = p_tag_g[0]
+        t.transform.translation.y = p_tag_g[1]
+        t.transform.translation.z = p_tag_g[2]
+
+
+        #Ignore tag orientation for now, just use default quaternion
         t.transform.rotation.x = 0
         t.transform.rotation.y = 0
         t.transform.rotation.z = 0
@@ -261,19 +293,117 @@ class AnafiTfFramesPublisher():
 
         return
 
+    def rpyvec_nwu_to_enu(self,vec_nwu):
+        """
+        vec_nwu.vector.x = roll  (deg)
+        vec_nwu.vector.y = pitch (deg)
+        vec_nwu.vector.z = yaw   (deg)
+        Angles are in NWU world frame. Convert to ENU world frame.
+        """
+        out = Vector3Stamped()
+        out.header = vec_nwu.header  # keep stamp/frame_id
 
+        # --- degrees -> radians ---
+        r = math.radians(vec_nwu.vector.x)
+        p = math.radians(vec_nwu.vector.y)
+        y = math.radians(vec_nwu.vector.z)
+
+        # --- NWU RPY -> quaternion (tf uses intrinsic RPY about fixed axes x,y,z) ---
+        q_nwu = quaternion_from_euler(r, p, y)
+
+        # --- frame rotation NWU -> ENU is +90 deg about Z ---
+        q_rot = quaternion_from_euler(0.0, 0.0, math.pi / 2.0)
+
+        # --- apply: q_enu = q_rot ⊗ q_nwu ---
+        q_enu = quaternion_multiply(q_rot, q_nwu)
+
+        # normalize (good practice)
+        n = math.sqrt(sum(v*v for v in q_enu))
+        q_enu = [v / n for v in q_enu]
+
+        # --- quaternion -> ENU RPY ---
+        r_enu, p_enu, y_enu = euler_from_quaternion(q_enu)
+
+        # --- radians -> degrees ---
+        out.vector.x = math.degrees(r_enu)
+        out.vector.y = math.degrees(p_enu)
+        out.vector.z = math.degrees(y_enu)
+
+        return out
+
+    def vector3stamped_nwu_to_enu(self,v_nwu):
+        """
+        Convert a Vector3Stamped from NWU (x=N, y=W, z=U) to ENU (x=E, y=N, z=U).
+
+        This is for true vectors (position delta, velocity, acceleration, force, etc.),
+        NOT for Euler angles packed into x/y/z.
+        """
+        v_enu = Vector3Stamped()
+        v_enu.header = v_nwu.header  # keep timestamp; you may want to change frame_id
+
+        v_enu.vector.x = -v_nwu.vector.y  # East  = -West
+        v_enu.vector.y =  v_nwu.vector.x  # North =  North
+        v_enu.vector.z =  v_nwu.vector.z  # Up    =  Up
+
+        # Optional: if you're truly converting frames, update the frame_id accordingly:
+        # v_enu.header.frame_id = "world"  # or "map", etc.
+
+        return v_enu
+
+
+    def pose_nwu_to_enu(self,pose_nwu):
+        pose_enu = PoseStamped()
+
+        # ---- Position (NWU -> ENU) ----
+        # NWU: x=N, y=W, z=U
+        # ENU: x=E, y=N, z=U
+        pose_enu.header = pose_nwu.header
+        pose_enu.pose.position.x = -pose_nwu.pose.position.y   # E = -W
+        pose_enu.pose.position.y =  pose_nwu.pose.position.x   # N =  N
+        pose_enu.pose.position.z =  pose_nwu.pose.position.z   # U =  U
+
+        # ---- Orientation (NWU -> ENU) ----
+        # q_rot = +90deg about Z and =180deg about x. 
+        # The rotation about x is necessary to account for the angle sign convention commonly used for UAVs.
+        q_rot = quaternion_from_euler(math.pi, 0.0, math.pi / 2.0)
+
+        q_nwu = [
+            pose_nwu.pose.orientation.x,
+            pose_nwu.pose.orientation.y,
+            pose_nwu.pose.orientation.z,
+            pose_nwu.pose.orientation.w,
+        ]
+
+        # Quaternion multiply: q_enu = q_rot * q_nwu
+        q_enu = quaternion_multiply(q_rot, q_nwu)
+
+        # Normalize (good practice)
+        norm = math.sqrt(sum(v*v for v in q_enu))
+        q_enu = [v / norm for v in q_enu]
+
+        pose_enu.pose.orientation.x = q_enu[0]
+        pose_enu.pose.orientation.y = q_enu[1]
+        pose_enu.pose.orientation.z = q_enu[2]
+        pose_enu.pose.orientation.w = q_enu[3]
+        # print("Converted pose",pose_enu)
+        return pose_enu
     
     def read_state(self,msg): 
         """Function reads the Sphinx message from the sphinx interface node.
         """
-        self.drone_state = msg
-        self.drone_state.pose.pose.position.z = 0
-        self.publish_tfs()
+        self.drone_state.pose = self.pose_nwu_to_enu(msg.pose)
+        self.drone_state.twist.twist.linear = self.vector3stamped_nwu_to_enu(msg.twist.twist.linear)
+        self.drone_state.twist.twist.angular = self.vector3stamped_nwu_to_enu(msg.twist.twist.angular)
+        # self.drone_state.pose.pose.position.z = -self.drone_state.pose.pose.position.z
+        # self.publish_tfs()
+        self.publish_stability_frame()
+        self.publish_body_fixed_frame()
         return
     
     def read_gimbal(self,msg):
-        self.gimbal_absolute = msg  
-        self.publish_tfs()
+        self.gimbal_absolute = self.rpyvec_nwu_to_enu(msg)  
+        self.publish_gimbal_frame()
+        #self.publish_tfs()
 
     def read_apriltag(self,msg):
         self.apriltags = msg.detections
@@ -282,72 +412,7 @@ class AnafiTfFramesPublisher():
             self.apriltag_pose = apriltag_detection.pose
             self.publish_apriltag_tf()
     
-    # def publish_apriltag_tf(self):
-    #     t = TransformStamped()
-    #     #Gimbal position relative to origin of the anafi drone
-    #     #Determined offset values in sphinx
-
-    #     phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
-
     
-    #     #Define rotation matrix to consider offset between center of drone and center of gimbal
-    #     cr = np.cos(phi)
-    #     sr = np.sin(phi)
-    #     cp = np.cos(-theta)
-    #     sp = np.sin(-theta)
-    #     cy = np.cos(-psi)
-    #     sy = np.sin(-psi)
-    
-    #     R = np.array([
-    #         [cy*cp,  cy*sp*sr - sy*cr,  cy*sp*cr + sy*sr],
-    #         [sy*cp,  sy*sp*sr + cy*cr,  sy*sp*cr - cy*sr],
-    #         [-sp,    cp*sr,             cp*cr           ]
-    #     ])
-    
-    #     deltas_bf = np.array([self.gimbal_offset_x,self.gimbal_offset_y,self.gimbal_offset_z])
-    #     deltas_gimbal_world = R @ deltas_bf
-
-    #     #Define rotation matrix to consider offset between center of gimbal and apriltag
-    #     tcr = np.cos(phi)
-    #     tsr = np.sin(phi)
-    #     tcp = np.cos(-theta)
-    #     tsp = np.sin(-theta)
-    #     tcy = np.cos(-psi)
-    #     tsy = np.sin(-psi)
-    
-        
-    #     R = np.array([
-    #         [tcy*tcp,  tcy*tsp*tsr - tsy*tcr,  tcy*tsp*tcr + tsy*tsr],
-    #         [tsy*tcp,  tsy*tsp*tsr + tcy*tcr,  tsy*tsp*tcr - tcy*tsr],
-    #         [-tsp,    tcp*tsr,             tcp*tcr           ]
-    #     ])
-    
-    #     deltas_tag = np.array([self.apriltag_pose.pose.pose.position.z,-self.apriltag_pose.pose.pose.position.x,self.apriltag_pose.pose.pose.position.y])
-    #     deltas_tag_world = R @ deltas_tag
-    
-    
-    #     t.header.stamp = rospy.Time.now()
-    #     t.header.frame_id = drone_name + '/gimbal_frame'
-    #     t.child_frame_id =  "detected_tag"
-    #     t.transform.translation.x = self.apriltag_pose.pose.pose.position.z
-    #     t.transform.translation.y = self.apriltag_pose.pose.pose.position.x
-    #     t.transform.translation.z = self.apriltag_pose.pose.pose.position.y
-
-    #     #Calculate gimbal orientation considering compensation capabilities of anafi drone
-
-    #     gimbal_roll = -phi +   np.deg2rad(self.gimbal_absolute.vector.x) # compensation of drone roll + commanded gimbal roll angle
-    #     gimbal_pitch = theta  + np.deg2rad(self.gimbal_absolute.vector.y) # compensation of drone pitch + commanded gimbal pitch angle
-    #     gimbal_yaw = 0  # yaw of gimbal is fixed
-
-
-    #     t.transform.rotation.x = self.apriltag_pose.pose.pose.orientation.x
-    #     t.transform.rotation.y = self.apriltag_pose.pose.pose.orientation.y
-    #     t.transform.rotation.z = self.apriltag_pose.pose.pose.orientation.z
-    #     t.transform.rotation.w = self.apriltag_pose.pose.pose.orientation.w    
-    #     self.br.sendTransform(t)
-
-    #     return
-
 
 
 

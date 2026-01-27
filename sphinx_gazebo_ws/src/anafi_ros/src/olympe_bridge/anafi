@@ -129,7 +129,7 @@ class Anafi(threading.Thread):
         self.pub_pose_raw = rospy.Publisher("pose/raw", uav_pose, queue_size=1)
         # self.pub_control_state = rospy.Publisher("position_control/state_enu",State,queue_size=1)
         self.pub_uav_state_raw = rospy.Publisher("drone/optical_flow_state_raw",State,queue_size=1)
-        self.pub_uav_state = rospy.Publisher("position_control/state_enu",State,queue_size=1)
+        self.pub_uav_state = rospy.Publisher("position_control/state_nwu",State,queue_size=1)
 
         # Subscribers
         rospy.Subscriber("drone/rpyt", PilotingCommand, self.rpyt_callback)
@@ -1026,9 +1026,12 @@ class Anafi(threading.Thread):
                 speed = vmeta[1]['drone']['speed']  # opticalflow speed (m/s)
                 self.msg_speed.header = self.header
                 self.msg_speed.header.frame_id = 'world'
-                self.msg_speed.vector.x = speed['north']
-                self.msg_speed.vector.y = speed['east']
-                self.msg_speed.vector.z = -speed['down']
+                # self.msg_speed.vector.x = speed['north']
+                # self.msg_speed.vector.y = speed['east']
+                # self.msg_speed.vector.z = -speed['down']
+                self.msg_speed.vector.x = speed['north'] #north
+                self.msg_speed.vector.y = -speed['east'] #west
+                self.msg_speed.vector.z = speed['down']  #up              
                 self.pub_speed.publish(self.msg_speed)
                 self.predict_enu(self.msg_speed)
 
