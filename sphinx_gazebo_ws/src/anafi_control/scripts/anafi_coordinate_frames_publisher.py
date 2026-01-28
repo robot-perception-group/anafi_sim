@@ -3,7 +3,7 @@ Class publishes all frames relevant for docking using the anafi drone and the ap
 '''
 import math
 import rospy
-from tf.transformations import quaternion_from_euler, euler_from_quaternion, quaternion_inverse, quaternion_multiply, quaternion_from_matrix
+from tf.transformations import quaternion_from_euler, euler_from_quaternion, quaternion_inverse, quaternion_multiply, quaternion_from_matrix,concatenate_matrices,translation_from_matrix,translation_matrix,quaternion_matrix,quaternion_from_matrix, inverse_matrix
 from nav_msgs.msg import Odometry
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster, TransformStamped
 from geometry_msgs.msg import PoseStamped,Quaternion
@@ -11,11 +11,13 @@ from anafi_control.msg import State
 from geometry_msgs.msg import Vector3Stamped, PoseWithCovarianceStamped
 import numpy as np
 from apriltag_ros.msg import AprilTagDetectionArray, AprilTagDetection
+import time
 
 node_name = 'anafi_coordinate_frames_publisher'
 drone_name = rospy.get_param(rospy.get_namespace()+node_name+'/drone_name','anafi')
 
 #Odometry topic of the drone
+
 
 
 
@@ -93,12 +95,12 @@ class AnafiTfFramesPublisher():
 
         phi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
         
-        q = quaternion_from_euler(phi,theta,psi)
+        # q = quaternion_from_euler(phi,theta,psi)
 
-        t.transform.rotation.x = q[0]
-        t.transform.rotation.y = q[1]
-        t.transform.rotation.z = q[2]
-        t.transform.rotation.w = q[3]   
+        t.transform.rotation.x = self.drone_state.pose.pose.orientation.x
+        t.transform.rotation.y = self.drone_state.pose.pose.orientation.y
+        t.transform.rotation.z = self.drone_state.pose.pose.orientation.z
+        t.transform.rotation.w = self.drone_state.pose.pose.orientation.w   
         self.br.sendTransform(t)
         # print(t.header.stamp,"Anafi control: Stability axes frame transformation sent.",drone_name + "/stability_axes")
         return
@@ -108,6 +110,7 @@ class AnafiTfFramesPublisher():
         
         
         p_drone = np.array([self.drone_state.pose.pose.position.x, self.drone_state.pose.pose.position.y, self.drone_state.pose.pose.position.z])
+        q_drone = np.array([self.drone_state.pose.pose.orientation.x, self.drone_state.pose.pose.orientation.y, self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
         
         # print('p_drone =',p_drone)
         
@@ -176,6 +179,25 @@ class AnafiTfFramesPublisher():
         t_c.transform.rotation.z = q_c[2]
         t_c.transform.rotation.w = q_c[3]
         self.br.sendTransform(t_c)
+
+        T_bfw = concatenate_matrices(translation_matrix(p_drone),quaternion_matrix(q_drone))
+        T_wbf = inverse_matrix(T_bfw)
+
+        t_bf = translation_from_matrix(T_wbf)
+        q_bf = quaternion_from_matrix(T_wbf)
+        
+        t_sp = TransformStamped()
+        t_sp.header.stamp = rospy.Time.now()
+        t_sp.header.frame_id = drone_name + "/body_fixed"
+        t_sp.child_frame_id =  drone_name + "/starting_point"
+        t_sp.transform.translation.x = t_bf[0]
+        t_sp.transform.translation.y = t_bf[1]
+        t_sp.transform.translation.z = t_bf[2]
+        t_sp.transform.rotation.x = q_bf[0]
+        t_sp.transform.rotation.y = q_bf[1]
+        t_sp.transform.rotation.z = q_bf[2]
+        t_sp.transform.rotation.w = q_bf[3]
+        self.br.sendTransform(t_sp)
         return
     
     def publish_apriltag_tf(self):
@@ -292,6 +314,8 @@ class AnafiTfFramesPublisher():
         self.br.sendTransform(t)
 
         return
+
+        
 
     def rpyvec_nwu_to_enu(self,vec_nwu):
         """
