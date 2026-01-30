@@ -27,7 +27,11 @@ class AnafiTfFramesPublisher():
         self.init_variables()
         self.init_tf()
         self.init_parameters()
+        self.init_publishers()
         return
+    
+    def init_publishers(self):
+        self.p_tag_w_pub = rospy.Publisher("/tag_detection/p_tag_w",Vector3Stamped,queue_size=1)
     
     def init_parameters(self):
         self.gimbal_offset_x = 0.1
@@ -279,7 +283,16 @@ class AnafiTfFramesPublisher():
         ])
         p_tag_g = R_gc @ p_tag_c
 
-        p_tag_w = Rwg @ (p_tag_g )+ p_gimbal_w 
+        p_tag_w = Rwg @ (p_tag_g )+ p_gimbal_w
+
+        msg_p_tag_w = Vector3Stamped()
+        msg_p_tag_w.header.frame_id = "world"
+        msg_p_tag_w.header.stamp = rospy.Time.now()
+        
+        msg_p_tag_w.vector.x = p_tag_w[0]
+        msg_p_tag_w.vector.y = p_tag_w[1]
+        msg_p_tag_w.vector.z = p_tag_w[2]
+        self.p_tag_w_pub.publish(msg_p_tag_w)
 
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
