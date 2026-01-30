@@ -6,12 +6,17 @@ import rospy
 from tf.transformations import quaternion_from_euler, euler_from_quaternion, quaternion_inverse, quaternion_multiply, quaternion_from_matrix,concatenate_matrices,translation_from_matrix,translation_matrix,quaternion_matrix,quaternion_from_matrix, inverse_matrix
 from nav_msgs.msg import Odometry
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster, TransformStamped
-from geometry_msgs.msg import PoseStamped,Quaternion
+from geometry_msgs.msg import PoseStamped,Quaternion, PointStamped
 from anafi_control.msg import State
 from geometry_msgs.msg import Vector3Stamped, PoseWithCovarianceStamped
 import numpy as np
 from apriltag_ros.msg import AprilTagDetectionArray, AprilTagDetection
 import time
+from sensor_msgs.msg import NavSatFix
+from std_msgs.msg import Float32
+from olympe_bridge.kalman_filter import KalmanPosVelWithGPSBias2D
+from olympe_bridge.transformation_GPS import GPS2ECEF, ECEF2NED, GPS2NED
+
 
 node_name = 'anafi_coordinate_frames_publisher'
 drone_name = rospy.get_param(rospy.get_namespace()+node_name+'/drone_name','anafi')
@@ -45,13 +50,34 @@ class AnafiTfFramesPublisher():
         self.drone_state = State()
         self.apriltags = AprilTagDetectionArray()
         self.apriltag_pose = PoseStamped()
+        self.home_location = PointStamped()
+        self.speed = Vector3Stamped()
+        self.gps_location = NavSatFix()
+        self.home_position = Vector3Stamped()
+        self.gps_position = Vector3Stamped()
+        self.altitude = 0
+        self.kf = KalmanPosVelWithGPSBias2D(
+            dt = 0.02,
+            sigma_acc = 1.0,      # (m/s^2) process noise driving velocity (maneuvers)
+            sigma_bias= 0.06,    # (m) per-step bias process noise scale (wander rate)
+            tau_bias = 120.0,     # (s) bias correlation time (b is slow if tau is large)
+            sigma_vel_meas = 0.2, # (m/s) velocity measurement std
+            sigma_gps_meas = 4.0, # (m) GPS measurement std (white part)
+            )
+
         return
 
     def init_subscribers(self):
         self.state_subscriber = rospy.Subscriber("/"+drone_name+"/position_control/state_nwu",State,self.read_state)    
         self.gimbal_subscriber = rospy.Subscriber("/"+drone_name+"/gimbal/absolute",Vector3Stamped,self.read_gimbal)    
         self.apriltag_subscriber = rospy.Subscriber("/tag_detections",AprilTagDetectionArray,self.read_apriltag)
+        self.speed_subscriber = rospy.Subscriber("/"+drone_name+"/drone/speed",Vector3Stamped,self.read_speed)
+        self.gps_location_subscriber = rospy.Subscriber("/"+drone_name+"/drone/location_slow",NavSatFix,self.read_gps_location)
+        self.home_location_subscriber = rospy.Subscriber("/"+drone_name+"/drone/location_slow",NavSatFix,self.read_home_location)
+        self.altitude_subscriber = rospy.Subscriber("/"+drone_name+"/drone/altitude",Float32,self.read_altitude)
         return
+    
+        
     
     def init_tf(self):
         self.tfBuffer = Buffer()
@@ -62,6 +88,7 @@ class AnafiTfFramesPublisher():
         self.publish_stability_frame()
         self.publish_body_fixed_frame()
         self.publish_gimbal_frame()
+        self.publish_kf_drone_frame()
         return
 
     def publish_stability_frame(self):
@@ -113,7 +140,8 @@ class AnafiTfFramesPublisher():
         """Function publishes the stability axes frame w.r.t. the world frame."""
         
         
-        p_drone = np.array([self.drone_state.pose.pose.position.x, self.drone_state.pose.pose.position.y, self.drone_state.pose.pose.position.z])
+        # p_drone = np.array([self.drone_state.pose.pose.position.x, self.drone_state.pose.pose.position.y, self.drone_state.pose.pose.position.z])
+        p_drone = self.p_kf_drone_w
         q_drone = np.array([self.drone_state.pose.pose.orientation.x, self.drone_state.pose.pose.orientation.y, self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
         
         # print('p_drone =',p_drone)
@@ -328,8 +356,30 @@ class AnafiTfFramesPublisher():
 
         return
 
-        
+    def publish_kf_drone_frame(self):
+        kf_position_x, kf_position_y,kf_position_z = self.kf.position[0],self.kf.position[1],self.altitude
 
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = "world"
+        t.child_frame_id =  drone_name +'/kf_body_frame'
+        t.transform.translation.x = kf_position_x
+        t.transform.translation.y = kf_position_y
+        t.transform.translation.z = kf_position_z
+        self.p_kf_drone_w = np.array([kf_position_x,kf_position_y,kf_position_z])
+
+
+        #Ignore tag orientation for now, just use default quaternion
+        hi,theta,psi = euler_from_quaternion([self.drone_state.pose.pose.orientation.x,self.drone_state.pose.pose.orientation.y,self.drone_state.pose.pose.orientation.z,self.drone_state.pose.pose.orientation.w])
+        q = quaternion_from_euler(0, 0, psi)
+        
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]    
+        self.br.sendTransform(t)
+
+    
     def rpyvec_nwu_to_enu(self,vec_nwu):
         """
         vec_nwu.vector.x = roll  (deg)
@@ -449,6 +499,39 @@ class AnafiTfFramesPublisher():
             self.apriltag_pose = apriltag_detection.pose
             self.publish_apriltag_tf()
     
+    def read_speed(self,msg):
+        self.speed = self.vector3stamped_nwu_to_enu(msg)
+        self.kf.update_velocity(self.speed.vector.x, self.speed.vector.y)
+
+        return
+    
+    def read_gps_location(self,msg):
+        self.gps_location = msg
+        location_nwu = GPS2NED(msg.latitude, msg.longitude, msg.altitude, self.origin_ECEF,self.R_ECEF2NED)
+        location_nwu[2] = self.altitude
+
+
+        #Notice the order of points in the array
+        gps_position_nwu = Vector3Stamped()
+        gps_position_nwu.header.stamp = msg.header.stamp
+        gps_position_nwu.vector.x,gps_position_nwu.vector.y,gps_position_nwu.vector.z = location_nwu[0],location_nwu[1],location_nwu[2]
+        self.gps_position = self.vector3stamped_nwu_to_enu(gps_position_nwu)
+        self.kf.update_gps(self.gps_position.vector.x, self.gps_position.vector.y)
+
+        return
+    
+    def read_home_location(self,msg):
+        self.home_location = msg
+        if not math.isnan(msg.latitude) and self.home_location.latitude != 500.0:
+            self.origin_ECEF,self.R_ECEF2NED = GPS2ECEF(self.home_location.latitude,self.home_location.longitude,0,1)
+            self.home_position.header.stamp = rospy.Time.now()
+            self.home_position.vector.x,self.home_position.vector.y,self.home_position.vector.z = self.origin_ECEF[0],self.origin_ECEF[1],self.origin_ECEF[2]
+        return
+    
+    def read_altitude(self,msg):
+        self.altitude = msg.data
+        return
+    
     
 
 
@@ -458,4 +541,12 @@ if __name__ == '__main__':
     rospy.init_node(node_name)
     anafi_tf_publisher = AnafiTfFramesPublisher()
     rospy.loginfo("publisher node for stability axes frame started ")
-    rospy.spin()
+    rate = rospy.Rate(50)
+    while not rospy.is_shutdown():
+        anafi_tf_publisher.kf.predict()
+        print(anafi_tf_publisher.kf.position)
+        print(anafi_tf_publisher.kf.velocity)
+        print(anafi_tf_publisher.kf.gps_bias)
+        print("--------------")
+        anafi_tf_publisher.publish_kf_drone_frame()
+        rate.sleep()
