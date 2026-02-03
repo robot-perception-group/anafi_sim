@@ -22,7 +22,7 @@ class KalmanPosVelWithGPSBias2D:
         dt: float,
         sigma_acc: float = 1.0,      # (m/s^2) process noise driving velocity (maneuvers)
         sigma_bias: float = 0.02,    # (m) per-step bias process noise scale (wander rate)
-        tau_bias: float = 120.0,     # (s) bias correlation time (b is slow if tau is large)
+        phi: float = 1.0,            # (-) bias factor, decides the influence of bias factor.
         sigma_vel_meas: float = 0.2, # (m/s) velocity measurement std
         sigma_gps_meas: float = 2.0, # (m) GPS measurement std (white part)
         # x0: np.ndarray | None = None,
@@ -31,7 +31,7 @@ class KalmanPosVelWithGPSBias2D:
         self.dt = float(dt)
 
         # AR(1) coefficient for bias (Gauss?Markov)
-        self.phi = float(np.exp(-self.dt / float(tau_bias)))
+        self.phi = phi
 
         # State dimension
         self.n = 6
