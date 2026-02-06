@@ -1054,6 +1054,16 @@ class Anafi(threading.Thread):
                 self.msg_speed.vector.y = -speed['east'] #west
                 self.msg_speed.vector.z = -speed['down']  #up              
                 self.pub_speed.publish(self.msg_speed)
+
+
+                #Convert speed to world frame, not body frame
+
+
+
+
+
+
+
                 
                 #WHEN CHOOSING THIS APPROACH, ACTIVATE FUNCTION update_nwu
                 #self.predict_nwu(self.msg_speed)
