@@ -1066,24 +1066,24 @@ class Anafi(threading.Thread):
 
                 
                 #WHEN CHOOSING THIS APPROACH, ACTIVATE FUNCTION update_nwu
-                #self.predict_nwu(self.msg_speed)
+                self.predict_nwu(self.msg_speed)
 
 
-                location = vmeta[1]["drone"]["location"]
-                # print( vmeta[1])
-                origin_ECEF,R_ECEF2NED = GPS2ECEF(self.msg_home_location.point.x,self.msg_home_location.point.y,self.msg_home_location.point.z,1)
-                location_ned = GPS2NED(location["latitude"], location["longitude"], location["altitude_egm96amsl"], origin_ECEF, R_ECEF2NED)
-                #Notice the order of points in the array
-                # print("location_ned",location_ned)
-                location_ned_corrected = location_ned.flatten() + np.array([self.msg_spawn_point.point.y,self.msg_spawn_point.point.x,self.msg_spawn_point.point.z])
-                # print("location_ned_corrected:")
-                #Choose this in order to get drone's position from state estimate 
-                self.msg_uav_state.pose.pose.position.x = location_ned_corrected[0]
-                self.msg_uav_state.pose.pose.position.y = -location_ned_corrected[1]
-                # self.msg_uav_state.pose.pose.position.z = location_ned_corrected[2]
-                self.pub_uav_state.publish(self.msg_uav_state)
+                # location = vmeta[1]["drone"]["location"]
+                # # print( vmeta[1])
+                # origin_ECEF,R_ECEF2NED = GPS2ECEF(self.msg_home_location.point.x,self.msg_home_location.point.y,self.msg_home_location.point.z,1)
+                # location_ned = GPS2NED(location["latitude"], location["longitude"], location["altitude_egm96amsl"], origin_ECEF, R_ECEF2NED)
+                # #Notice the order of points in the array
+                # # print("location_ned",location_ned)
+                # location_ned_corrected = location_ned.flatten() + np.array([self.msg_spawn_point.point.y,self.msg_spawn_point.point.x,self.msg_spawn_point.point.z])
+                # # print("location_ned_corrected:")
+                # #Choose this in order to get drone's position from state estimate 
+                # self.msg_uav_state.pose.pose.position.x = location_ned_corrected[0]
+                # self.msg_uav_state.pose.pose.position.y = -location_ned_corrected[1]
+                # # self.msg_uav_state.pose.pose.position.z = location_ned_corrected[2]
+                # self.pub_uav_state.publish(self.msg_uav_state)
 
-                # print(self.msg_uav_state.pose.pose.position)
+                # # print(self.msg_uav_state.pose.pose.position)
 
 
                 battery_percentage = vmeta[1]['drone']['battery_percentage']  # [0=empty, 100=full]

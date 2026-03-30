@@ -1,3 +1,6 @@
 [submodule "sphinx_gazebo_ws/src/pid"]
 	path = sphinx_gazebo_ws/src/pid
 	url = https://bitbucket.org/AndyZe/pid.git
+[submodule "sphinx_gazebo_ws/src/anafi_ros/src/olympe_bridge/yoloe"]
+	path = sphinx_gazebo_ws/src/anafi_ros/src/olympe_bridge/yoloe
+	url = https://github.com/THU-MIG/yoloe.git

@@ -16,6 +16,12 @@ from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import Float32
 from olympe_bridge.kalman_filter import KalmanPosVelWithGPSBias2D
 from olympe_bridge.transformation_GPS import GPS2ECEF, ECEF2NED, GPS2NED
+from olympe_bridge.yoloe_blimp_detection import YoloeRosNode
+from olympe_bridge.dae_mesh_2D_projector import DaeProjector
+import argparse
+from gazebo_msgs.msg import ModelStates
+from sensor_msgs.msg import Image, CameraInfo
+
 
 
 node_name = 'anafi_coordinate_frames_publisher'
@@ -28,22 +34,48 @@ drone_name = rospy.get_param(rospy.get_namespace()+node_name+'/drone_name','anaf
 
 class AnafiTfFramesPublisher():
     def __init__(self):
-        self.init_subscribers()
-        self.init_variables()
         self.init_tf()
+
+        self.init_variables()
+        self.init_subscribers()
         self.init_parameters()
         self.init_publishers()
         return
     
     def init_publishers(self):
         self.p_tag_w_pub = rospy.Publisher("/tag_detection/p_tag_w",Vector3Stamped,queue_size=1)
+        self.projected_dae_mesh_pub = rospy.Publisher("/debug/projected_dae_mesh_pub",Image,queue_size = 0)
     
     def init_parameters(self):
         self.gimbal_offset_x = 0.1
         self.gimbal_offset_y = 0
         self.gimbal_offset_z = 0.014
     
-    
+    def init_yoloe_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--image-topic", type=str, default="/anafi_camera/image_raw_gazebo_timestamp",
+                            help="Input ROS image topic (sensor_msgs/Image)")
+        parser.add_argument("--output-topic", type=str, default="/yoloe/annotated",
+                            help="Output ROS image topic (sensor_msgs/Image)")
+        parser.add_argument("--checkpoint", type=str, default="../yoloe/weights/yoloe-v8s-seg.pt",
+                            help="Path or ID of the model checkpoint")
+        parser.add_argument("--names", nargs="+", default=["blimp drone","drone spherical with attachments"],
+                            help="List of open-vocab class names to set for the model")
+        parser.add_argument("--device", type=str, default="cuda",
+                            help="Device to run inference on (e.g. cpu, cuda:0)")
+        parser.add_argument("--conf", type=float, default=0.25,
+                            help="Confidence threshold")
+        parser.add_argument("--iou", type=float, default=0.7,
+                            help="IoU threshold")
+        parser.add_argument("--no-masks", action="store_true",
+                            help="Disable mask drawing")
+        parser.add_argument("--encoding", type=str, default="rgb8",
+                            help="Output image encoding for published message (bgr8 or rgb8 are common)")
+        parser.add_argument("--node-name", type=str, default="yoloe_inference",
+                            help="ROS node name")
+        parser.add_argument("--queue-size", type=int, default=1,
+                            help="Subscriber queue size (1 drops frames if inference is slow)")
+        return parser.parse_args()
 
     def init_variables(self):
         self.gimbal_absolute = Vector3Stamped() # roll, pitch, yaw in deg. roll and pitch relative to frame similar to stability frame, not body-fixed frame. yaw relative to world frame axis, i.e. it is same than drone yaw angle.
@@ -55,7 +87,10 @@ class AnafiTfFramesPublisher():
         self.gps_location = NavSatFix()
         self.home_position = Vector3Stamped()
         self.gps_position = Vector3Stamped()
-        self.altitude = 0
+        self.altitude = 0#
+        self.p_gimbal_w = np.zeros(3)
+        self.q_gimbal_w = np.zeros(4)
+
         # self.kf = KalmanPosVelWithGPSBias2D(
         #     dt = 0.02,
         #     sigma_acc = 2,      # (m/s^2) process noise driving velocity (maneuvers)
@@ -72,7 +107,9 @@ class AnafiTfFramesPublisher():
             sigma_vel_meas = 0.7, # (m/s) velocity measurement std
             sigma_gps_meas = 2.5, # (m) GPS measurement std (white part)
             )
-
+        yoloe_args = self.init_yoloe_args()
+        self.yoloe = YoloeRosNode(yoloe_args)
+        self.dae_projector = DaeProjector()
         return
 
     def init_subscribers(self):
@@ -80,17 +117,25 @@ class AnafiTfFramesPublisher():
         self.gimbal_subscriber = rospy.Subscriber("/"+drone_name+"/gimbal/absolute",Vector3Stamped,self.read_gimbal)    
         self.apriltag_subscriber = rospy.Subscriber("/tag_detections",AprilTagDetectionArray,self.read_apriltag)
         self.speed_subscriber = rospy.Subscriber("/"+drone_name+"/drone/speed",Vector3Stamped,self.read_speed)
-        self.gps_location_subscriber = rospy.Subscriber("/"+drone_name+"/drone/location_slow",NavSatFix,self.read_gps_location)
+        # self.gps_location_subscriber = rospy.Subscriber("/"+drone_name+"/drone/location_slow",NavSatFix,self.read_gps_location)
         self.home_location_subscriber = rospy.Subscriber("/"+drone_name+"/home/location",PointStamped,self.read_home_location)
         self.altitude_subscriber = rospy.Subscriber("/"+drone_name+"/drone/altitude",Float32,self.read_altitude)
+        self.camera_subscriber = rospy.Subscriber("/"+drone_name+"/camera/image",Image, self.read_camera_image)
+        self.camera_info_subscriber = rospy.Subscriber("/"+drone_name+"/camera/camera_info",CameraInfo, self.read_camera_info)
+
+        self.gazebo_model_states_subscriber = rospy.Subscriber("/gazebo/model_states",ModelStates,self.read_gazebo_model_states)
+        self.gazebo_camera_subscriber = rospy.Subscriber("/"+drone_name+"_camera/image_raw_gazebo_timestamp",Image, self.read_gazebo_camera_image)
+        self.gazebo_camera_info_subscriber = rospy.Subscriber("/"+drone_name+"_camera/camera_info_gazebo_timestamp",CameraInfo, self.read_gazebo_camera_info)
+
+
         return
-    
-        
     
     def init_tf(self):
         self.tfBuffer = Buffer()
         self.listener = TransformListener(self.tfBuffer)
         self.br = TransformBroadcaster()
+
+   
 
     def publish_tfs(self):
         self.publish_stability_frame()
@@ -180,6 +225,7 @@ class AnafiTfFramesPublisher():
 
         #Rotate the offset vector which is described in the 
         p_gimbal_w = R @ p_gimbal_bf + p_drone
+        self.p_gimbal_w = p_gimbal_w 
         # print('p_gimbal_w =',p_gimbal_w)
 
         # print("p_gimbal_w =",p_gimbal_w)
@@ -205,6 +251,8 @@ class AnafiTfFramesPublisher():
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]    
         self.br.sendTransform(t)
+        self.q_gimbal_w = q
+
 
         t_c = TransformStamped()
         t_c.header.stamp = rospy.Time.now()
@@ -387,6 +435,7 @@ class AnafiTfFramesPublisher():
         t.transform.rotation.w = q[3]    
         self.br.sendTransform(t)
 
+
     
     def rpyvec_nwu_to_enu(self,vec_nwu):
         """
@@ -445,7 +494,6 @@ class AnafiTfFramesPublisher():
 
         return v_enu
 
-
     def pose_nwu_to_enu(self,pose_nwu):
         pose_enu = PoseStamped()
 
@@ -482,7 +530,10 @@ class AnafiTfFramesPublisher():
         pose_enu.pose.orientation.w = q_enu[3]
         # print("Converted pose",pose_enu)
         return pose_enu
-    
+
+
+
+
     def read_state(self,msg): 
         """Function reads the Sphinx message from the sphinx interface node.
         """
@@ -538,9 +589,7 @@ class AnafiTfFramesPublisher():
         self.gps_position = gps_position
 
 
-        #self.gps_position = self.vector3stamped_nwu_to_enu(gps_position_nwu)
-        
-        
+
         self.kf.update_gps(self.gps_position.vector.x, self.gps_position.vector.y)
 
 
@@ -569,15 +618,144 @@ class AnafiTfFramesPublisher():
         if not math.isnan(msg.point.x) and self.home_location.point.y != 500.0:
             self.origin_ECEF,self.R_ECEF2NED = GPS2ECEF(self.home_location.point.x,self.home_location.point.y,0,1)
             self.home_position.header.stamp = rospy.Time.now()
-            self.home_position.vector.x,self.home_position.vector.y,self.home_position.vector.z = self.origin_ECEF[0],self.origin_ECEF[1],self.origin_ECEF[2]
+            self.home_position.vector.x,self.home_position.vector.y,self.home_position.vector.z = self.origin_ECEF[0],self.origin_ECEF[1],self.origin_ECEF[2]            
         return
     
     def read_altitude(self,msg):
         self.altitude = msg.data
         return
     
-    
+    def read_gazebo_model_states(self,msg):
+        i_cam = msg.name.index("anafi_camera")
+        i_blimp = msg.name.index("blimp")
 
+        pose_blimp = PoseStamped()
+        pose_blimp.header.stamp = rospy.Time.now()
+        pose_blimp.header.frame_id = "world"
+        pose_blimp.pose = msg.pose[i_blimp]
+
+        pose_cam = PoseStamped()
+        pose_cam.header.stamp = rospy.Time.now()
+        pose_cam.header.frame_id = "world"
+        pose_cam.pose = msg.pose[i_cam]
+
+
+        self.dae_projector.obj_pose_stamped = pose_blimp
+        self.dae_projector.cam_pose_stamped = pose_cam
+        self.dae_projector.out_cv = self.yoloe.out_cv
+
+
+        #Publish tf frames
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = 'world'
+        t.child_frame_id =  "blimp_gazebo"
+        t.transform.translation.x = pose_blimp.pose.position.x
+        t.transform.translation.y = pose_blimp.pose.position.y
+        t.transform.translation.z = pose_blimp.pose.position.z
+        t.transform.rotation.x = pose_blimp.pose.orientation.x
+        t.transform.rotation.y = pose_blimp.pose.orientation.y
+        t.transform.rotation.z = pose_blimp.pose.orientation.z
+        t.transform.rotation.w = pose_blimp.pose.orientation.w
+        self.br.sendTransform(t)
+        
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = 'world'
+        t.child_frame_id =  "cam_gazebo"
+        t.transform.translation.x = pose_cam.pose.position.x
+        t.transform.translation.y = pose_cam.pose.position.y
+        t.transform.translation.z = pose_cam.pose.position.z
+        t.transform.rotation.x = pose_cam.pose.orientation.x
+        t.transform.rotation.y = pose_cam.pose.orientation.y
+        t.transform.rotation.z = pose_cam.pose.orientation.z
+        t.transform.rotation.w = pose_cam.pose.orientation.w
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = 'world'
+        t.child_frame_id =  "blimp_estimated"
+        t.transform.translation.x = self.dae_projector.p_wo_from_cam[0]
+        t.transform.translation.y = self.dae_projector.p_wo_from_cam[1]
+        t.transform.translation.z = self.dae_projector.p_wo_from_cam[2]
+        t.transform.rotation.x = pose_blimp.pose.orientation.x
+        t.transform.rotation.y = pose_blimp.pose.orientation.y
+        t.transform.rotation.z = pose_blimp.pose.orientation.z
+        t.transform.rotation.w = pose_blimp.pose.orientation.w
+        self.br.sendTransform(t)
+        
+        
+
+
+    def read_gazebo_camera_image(self,msg):
+        self.yoloe.image = msg # setting this will trigger the computation of the bbox which will be stored in yoloe class
+        # self.dae_projector.out_cv = self.yoloe.frame_bgr
+        img_msg = msg
+        if self.yoloe.detections:
+            bbox = self.yoloe.detections[0].xyxy.flatten()
+            self.dae_projector.set_yolo_bbox(bbox[0], bbox[1], bbox[2], bbox[3]) #setting this will trigger the estimation of the blimp position
+            self.dae_projector.out_cv = self.yoloe.out_cv
+            img_msg = self.dae_projector.img_msg
+
+        self.projected_dae_mesh_pub.publish(img_msg)
+        return
+    
+    def read_gazebo_camera_info(self,msg):
+        fx = msg.K[0]
+        fy = msg.K[4]
+        cx = msg.K[2]
+        cy = msg.K[5]
+
+        self.dae_projector.set_camera_parameters(fx,fy,cx,cy,msg.width,msg.height)
+        return
+    
+    def read_camera_info(self,msg):
+        fx = msg.K[0]
+        fy = msg.K[4]
+        cx = msg.K[2]
+        cy = msg.K[5]
+
+        self.dae_projector.set_camera_parameters(fx,fy,cx,cy,msg.width,msg.height)
+        return
+
+
+    def read_camera_image(self,msg):
+    
+        self.yoloe.image = msg # setting this will trigger the computation of the bbox which will be stored in yoloe class
+        img_msg = msg
+        self.dae_projector.out_cv = self.yoloe.out_cv
+        pose_blimp = PoseStamped()
+        pose_blimp.header.stamp = rospy.Time.now()
+        pose_blimp.pose.orientation.z = 0.7071
+        pose_blimp.pose.orientation.w = 0.7071
+
+        pose_cam = PoseStamped()
+        pose_cam.header.stamp = rospy.Time.now()
+        pose_cam.pose.position.x,pose_cam.pose.position.y,pose_cam.pose.position.z = 0,0,0
+        pose_cam.pose.orientation.x,pose_cam.pose.orientation.y,pose_cam.pose.orientation.z,pose_cam.pose.orientation.w = self.q_gimbal_w[0],self.q_gimbal_w[1],self.q_gimbal_w[2], self.q_gimbal_w[3]
+        
+        self.dae_projector.obj_pose_stamped = pose_blimp
+        self.dae_projector.cam_pose_stamped = pose_cam
+        # self.dae_projector.out_cv = self.yoloe.out_cv
+
+
+        if self.yoloe.detections:
+            print("Found detection")
+            bbox = self.yoloe.detections[0].xyxy.flatten()
+            self.dae_projector.set_yolo_bbox(bbox[0], bbox[1], bbox[2], bbox[3]) #setting this will trigger the estimation of the blimp position
+            self.dae_projector.out_cv = self.yoloe.out_cv
+            img_msg = self.dae_projector.img_msg
+        else:
+            print("No detection")
+        self.projected_dae_mesh_pub.publish(img_msg)
+        return
+
+        # print(self.yoloe.detections[0])
+
+        # print(self.dae_projector.latest["bbox_corners_uv"])
+        # print("---")
+        # print(f"blimp    x,y,z: %.2f, %.2f, %.2f",pose_blimp.pose.position.x,pose_blimp.pose.position.y,pose_blimp.pose.position.z)
+        # print(f"pose_cam x,y,z: %.2f, %.2f, %.2f",pose_cam.pose.position.x,pose_cam.pose.position.y,pose_cam.pose.position.z)
+        return
 
 
 if __name__ == '__main__':
@@ -585,12 +763,19 @@ if __name__ == '__main__':
     rospy.init_node(node_name)
     anafi_tf_publisher = AnafiTfFramesPublisher()
     rospy.loginfo("publisher node for stability axes frame started ")
-    rate = rospy.Rate(50)
+    rate = rospy.Rate(15)
     while not rospy.is_shutdown():
         anafi_tf_publisher.kf.predict()
-        print(anafi_tf_publisher.kf.position)
-        print(anafi_tf_publisher.kf.velocity)
-        print(anafi_tf_publisher.kf.gps_bias)
-        print("--------------")
+        # print(anafi_tf_publisher.kf.position)
+        # print(anafi_tf_publisher.kf.velocity)
+        # print(anafi_tf_publisher.kf.gps_bias)
+        # print("--------------")
+        # print(anafi_tf_publisher.yoloe.detections)
+        
+        
+        # if anafi_tf_publisher.yoloe.detections:
+        #     print(anafi_tf_publisher.yoloe.detections[0].xyxy)
+        
         anafi_tf_publisher.publish_kf_drone_frame()
+
         rate.sleep()
