@@ -16,7 +16,7 @@ from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import Float32
 from olympe_bridge.kalman_filter import KalmanPosVelWithGPSBias2D
 from olympe_bridge.transformation_GPS import GPS2ECEF, ECEF2NED, GPS2NED
-from olympe_bridge.yoloe_blimp_detection import YoloeRosNode
+from olympe_bridge.yoloe_blimp_detection_vsp import YoloeRosNode
 from olympe_bridge.dae_mesh_2D_projector import DaeProjector
 import argparse
 from gazebo_msgs.msg import ModelStates
@@ -53,29 +53,25 @@ class AnafiTfFramesPublisher():
     
     def init_yoloe_args(self):
         parser = argparse.ArgumentParser()
-        parser.add_argument("--image-topic", type=str, default="/anafi_camera/image_raw_gazebo_timestamp",
-                            help="Input ROS image topic (sensor_msgs/Image)")
-        parser.add_argument("--output-topic", type=str, default="/yoloe/annotated",
-                            help="Output ROS image topic (sensor_msgs/Image)")
-        parser.add_argument("--checkpoint", type=str, default="../yoloe/weights/yoloe-v8s-seg.pt",
-                            help="Path or ID of the model checkpoint")
-        parser.add_argument("--names", nargs="+", default=["blimp drone","drone spherical with attachments"],
-                            help="List of open-vocab class names to set for the model")
-        parser.add_argument("--device", type=str, default="cuda",
-                            help="Device to run inference on (e.g. cpu, cuda:0)")
-        parser.add_argument("--conf", type=float, default=0.25,
-                            help="Confidence threshold")
-        parser.add_argument("--iou", type=float, default=0.7,
-                            help="IoU threshold")
-        parser.add_argument("--no-masks", action="store_true",
-                            help="Disable mask drawing")
-        parser.add_argument("--encoding", type=str, default="rgb8",
-                            help="Output image encoding for published message (bgr8 or rgb8 are common)")
-        parser.add_argument("--node-name", type=str, default="yoloe_inference",
-                            help="ROS node name")
-        parser.add_argument("--queue-size", type=int, default=1,
-                            help="Subscriber queue size (1 drops frames if inference is slow)")
+        parser.add_argument("--image-topic", type=str, default="/anafi_camera/image_raw_gazebo_timestamp",help="Input ROS image topic (sensor_msgs/Image)")
+        parser.add_argument("--output-topic", type=str, default="/yoloe/annotated", help="Output ROS image topic (sensor_msgs/Image)")
+        parser.add_argument("--checkpoint", type=str, default="../yoloe/weights/yoloe-v8s-seg.pt", help="Path or ID of the model checkpoint")
+        parser.add_argument("--names", nargs="+", default=["blimp drone","drone spherical with attachments"], help="List of open-vocab class names to set for the model")
+        parser.add_argument("--device", type=str, default="cuda", help="Device to run inference on (e.g. cpu, cuda:0)")
+        parser.add_argument("--conf", type=float, default=0.25,  help="Confidence threshold")
+        parser.add_argument("--iou", type=float, default=0.7, help="IoU threshold")
+        parser.add_argument("--no-masks", action="store_true",help="Disable mask drawing")
+        parser.add_argument("--encoding", type=str, default="rgb8", help="Output image encoding for published message (bgr8 or rgb8 are common)")
+        parser.add_argument("--node-name", type=str, default="yoloe_inference", help="ROS node name")
+        parser.add_argument("--queue-size", type=int, default=1,help="Subscriber queue size (1 drops frames if inference is slow)")
+
+
+
         return parser.parse_args()
+
+
+
+        
 
     def init_variables(self):
         self.gimbal_absolute = Vector3Stamped() # roll, pitch, yaw in deg. roll and pitch relative to frame similar to stability frame, not body-fixed frame. yaw relative to world frame axis, i.e. it is same than drone yaw angle.
